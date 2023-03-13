@@ -2,12 +2,12 @@ package ru.practicum.shareit.user.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserStorage;
 
 import javax.validation.Valid;
 import java.util.Collection;
-import java.util.Map;
 
 @Component
 public class UserServiceImpl implements UserService {
@@ -24,7 +24,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(long userId, Map<String, Object> patch) {
+    public User updateUser(long userId, UserDto newUser) {
         User userToUpdate = userStorage.getUserById(userId);
         User patchedUser = User.builder()
                 .id(userToUpdate.getId())
@@ -32,20 +32,14 @@ public class UserServiceImpl implements UserService {
                 .email(userToUpdate.getEmail())
                 .build();
 
-        // На основе патча составим новое, обновленное представление пользователя,
-        // которым мы хотим заменить существующего пользователя
-        for (var entry : patch.entrySet()) {
-            switch (entry.getKey()) {
-                case "email":
-                    validateAndSetEmail(entry.getValue().toString(), patchedUser);
-                    break;
-                case "name":
-                    validateAndSetName(entry.getValue().toString(), patchedUser);
-                    break;
-            }
+        if (newUser.getEmail() != null) {
+            validateAndSetEmail(newUser.getEmail(), patchedUser);
+        }
+        if (newUser.getName() != null) {
+            validateAndSetName(newUser.getName(), patchedUser);
         }
 
-        return userStorage.updateUser(userId, patchedUser);
+        return userStorage.updateUser(patchedUser);
     }
 
     @Override

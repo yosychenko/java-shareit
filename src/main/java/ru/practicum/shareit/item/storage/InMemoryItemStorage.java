@@ -59,11 +59,13 @@ public class InMemoryItemStorage implements ItemStorage {
             return List.of();
         }
 
+        String clearedQuery = query.toLowerCase();
+
         return storage.values().stream()
                 .filter(Item::getAvailable)
                 .filter(item ->
-                        item.getName().toLowerCase().contains(query.toLowerCase()) ||
-                                item.getDescription().toLowerCase().contains(query.toLowerCase())
+                        item.getName().toLowerCase().contains(clearedQuery) ||
+                                item.getDescription().toLowerCase().contains(clearedQuery)
                 )
                 .collect(Collectors.toList());
     }

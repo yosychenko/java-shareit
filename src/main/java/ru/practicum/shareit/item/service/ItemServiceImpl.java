@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemStorage;
@@ -10,7 +11,6 @@ import ru.practicum.shareit.user.storage.UserStorage;
 
 import javax.validation.Valid;
 import java.util.Collection;
-import java.util.Map;
 
 @Component
 public class ItemServiceImpl implements ItemService {
@@ -33,7 +33,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Item updateItem(long itemId, long userId, Map<String, Object> patch) {
+    public Item updateItem(long itemId, long userId, ItemDto newItem) {
         Item itemToUpdate = itemStorage.getItemById(itemId);
         User user = userStorage.getUserById(userId);
 
@@ -50,20 +50,15 @@ public class ItemServiceImpl implements ItemService {
                 .request(itemToUpdate.getRequest())
                 .build();
 
-        for (var entry : patch.entrySet()) {
-            switch (entry.getKey()) {
-                case "name":
-                    validateAndSetName(entry.getValue().toString(), patchedItem);
-                    break;
-                case "description":
-                    validateAndSetDescription(entry.getValue().toString(), patchedItem);
-                    break;
-                case "available":
-                    validateAndSetIsAvailable(Boolean.parseBoolean(entry.getValue().toString()), patchedItem);
-                    break;
-            }
+        if (newItem.getName() != null) {
+            validateAndSetName(newItem.getName(), patchedItem);
         }
-
+        if (newItem.getDescription() != null) {
+            validateAndSetDescription(newItem.getDescription(), patchedItem);
+        }
+        if (newItem.getAvailable() != null) {
+            validateAndSetIsAvailable(newItem.getAvailable(), patchedItem);
+        }
 
         return itemStorage.updateItem(patchedItem);
     }

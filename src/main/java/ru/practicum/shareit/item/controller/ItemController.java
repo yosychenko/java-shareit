@@ -10,7 +10,6 @@ import ru.practicum.shareit.item.service.ItemService;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,9 +36,9 @@ public class ItemController {
     public ItemDto updateItem(
             @PathVariable long itemId,
             @RequestHeader("X-Sharer-User-Id") long userId,
-            @RequestBody Map<String, Object> patch
+            @RequestBody ItemDto newItem
     ) {
-        Item updatedItem = itemService.updateItem(itemId, userId, patch);
+        Item updatedItem = itemService.updateItem(itemId, userId, newItem);
         return ItemMapper.toItemDto(updatedItem);
     }
 

@@ -31,7 +31,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User updateUser(long userId, User newUser) {
+    public User updateUser(User newUser) {
         if (isDuplicateEmail(newUser)) {
             throw new DuplicateEmailException(newUser.getEmail());
         }

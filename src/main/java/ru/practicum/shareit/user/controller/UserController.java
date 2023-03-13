@@ -9,7 +9,6 @@ import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,8 +28,8 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}")
-    public UserDto updateUser(@PathVariable long userId, @RequestBody Map<String, Object> patch) {
-        User updatedUser = userService.updateUser(userId, patch);
+    public UserDto updateUser(@PathVariable long userId, @RequestBody UserDto newUser) {
+        User updatedUser = userService.updateUser(userId, newUser);
         return UserMapper.toUserDto(updatedUser);
     }
 
