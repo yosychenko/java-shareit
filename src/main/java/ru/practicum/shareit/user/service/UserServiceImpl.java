@@ -1,36 +1,36 @@
 package ru.practicum.shareit.user.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.exception.UserNotFoundException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 import javax.validation.Valid;
 import java.util.Collection;
 
-@Component
+@Service
 public class UserServiceImpl implements UserService {
-    private final UserStorage userStorage;
+    private final UserRepository userStorage;
 
     @Autowired
-    public UserServiceImpl(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userStorage = userRepository;
     }
 
     @Override
     public User createUser(User newUser) {
-        return userStorage.createUser(newUser);
+        return userStorage.save(newUser);
     }
 
     @Override
     public User updateUser(long userId, UserDto newUser) {
-        User userToUpdate = userStorage.getUserById(userId);
-        User patchedUser = User.builder()
-                .id(userToUpdate.getId())
-                .name(userToUpdate.getName())
-                .email(userToUpdate.getEmail())
-                .build();
+        User userToUpdate = userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User patchedUser = new User();
+        patchedUser.setId(userToUpdate.getId());
+        patchedUser.setName(userToUpdate.getName());
+        patchedUser.setEmail(userToUpdate.getEmail());
 
         if (newUser.getEmail() != null) {
             validateAndSetEmail(newUser.getEmail(), patchedUser);
@@ -39,22 +39,22 @@ public class UserServiceImpl implements UserService {
             validateAndSetName(newUser.getName(), patchedUser);
         }
 
-        return userStorage.updateUser(patchedUser);
+        return userStorage.save(patchedUser);
     }
 
     @Override
     public void deleteUser(long userId) {
-        userStorage.deleteUser(userId);
+        userStorage.deleteById(userId);
     }
 
     @Override
     public User getUserById(long userId) {
-        return userStorage.getUserById(userId);
+        return userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     @Override
     public Collection<User> getAllUsers() {
-        return userStorage.getAllUsers();
+        return userStorage.findAll();
     }
 
     private void validateAndSetEmail(@Valid String email, User user) {

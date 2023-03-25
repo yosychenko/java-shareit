@@ -1,54 +1,56 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.item.storage.ItemRepository;
+import ru.practicum.shareit.user.exception.UserNotFoundException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 import javax.validation.Valid;
 import java.util.Collection;
+import java.util.List;
 
-@Component
+@Service
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
+    private final ItemRepository itemStorage;
+    private final UserRepository userStorage;
 
     @Autowired
-    public ItemServiceImpl(ItemStorage itemStorage, UserStorage userStorage) {
+    public ItemServiceImpl(ItemRepository itemStorage, UserRepository userStorage) {
         this.itemStorage = itemStorage;
         this.userStorage = userStorage;
     }
 
     @Override
     public Item createItem(long userId, Item newItem) {
-        User owner = userStorage.getUserById(userId);
+        User owner = userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         newItem.setOwner(owner);
 
-        return itemStorage.createItem(newItem);
+        return itemStorage.save(newItem);
     }
 
     @Override
     public Item updateItem(long itemId, long userId, ItemDto newItem) {
-        Item itemToUpdate = itemStorage.getItemById(itemId);
-        User user = userStorage.getUserById(userId);
+        Item itemToUpdate = itemStorage.findById(itemId).orElseThrow(() -> new ItemNotFoundException(itemId));
+        User user = userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         if (itemToUpdate.getOwner().getId() != user.getId()) {
             throw new UserIsNotOwnerException(userId, itemId);
         }
+        Item patchedItem = new Item();
 
-        Item patchedItem = Item.builder()
-                .id(itemToUpdate.getId())
-                .name(itemToUpdate.getName())
-                .description(itemToUpdate.getDescription())
-                .available(itemToUpdate.getAvailable())
-                .owner(itemToUpdate.getOwner())
-                .request(itemToUpdate.getRequest())
-                .build();
+        patchedItem.setId(itemToUpdate.getId());
+        patchedItem.setName(itemToUpdate.getName());
+        patchedItem.setDescription(itemToUpdate.getDescription());
+        patchedItem.setAvailable(itemToUpdate.getAvailable());
+        patchedItem.setOwner(itemToUpdate.getOwner());
+        patchedItem.setRequest(itemToUpdate.getRequest());
 
         if (newItem.getName() != null) {
             validateAndSetName(newItem.getName(), patchedItem);
@@ -60,24 +62,28 @@ public class ItemServiceImpl implements ItemService {
             validateAndSetIsAvailable(newItem.getAvailable(), patchedItem);
         }
 
-        return itemStorage.updateItem(patchedItem);
+        return itemStorage.save(patchedItem);
     }
 
     @Override
     public Item getItemById(long itemId) {
-        return itemStorage.getItemById(itemId);
+        return itemStorage.findById(itemId).orElseThrow(() -> new ItemNotFoundException(itemId));
     }
 
     @Override
     public Collection<Item> getUserItems(long userId) {
-        User user = userStorage.getUserById(userId);
+        User user = userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
-        return itemStorage.getUserItems(user.getId());
+        return itemStorage.findItemByOwner(user);
     }
 
     @Override
     public Collection<Item> searchItems(String text) {
-        return itemStorage.searchItems(text);
+        if (text.isBlank()) {
+            return List.of();
+        }
+
+        return itemStorage.searchItems(text.toLowerCase());
     }
 
     private void validateAndSetName(@Valid String name, Item item) {
