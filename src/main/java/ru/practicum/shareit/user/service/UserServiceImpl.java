@@ -2,7 +2,6 @@ package ru.practicum.shareit.user.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.exception.UserNotFoundException;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
@@ -25,8 +24,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(long userId, UserDto newUser) {
-        User userToUpdate = userStorage.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+    public User updateUser(long userId, User newUser) {
+        User userToUpdate = getUserById(userId);
         User patchedUser = new User();
         patchedUser.setId(userToUpdate.getId());
         patchedUser.setName(userToUpdate.getName());

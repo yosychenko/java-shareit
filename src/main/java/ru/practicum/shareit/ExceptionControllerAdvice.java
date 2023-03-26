@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.shareit.booking.exception.*;
 import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
 import ru.practicum.shareit.user.exception.DuplicateEmailException;
@@ -34,7 +35,31 @@ public class ExceptionControllerAdvice {
         return Map.of("message", ex.getMessage());
     }
 
-    @ExceptionHandler({UserNotFoundException.class, ItemNotFoundException.class, UserIsNotOwnerException.class})
+    @ExceptionHandler({
+            CannotBookUnavailableItemException.class,
+            BookingPeriodIsNotValidException.class,
+            SameApproveStatusException.class
+    })
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequestExceptions(RuntimeException ex) {
+        return Map.of("message", ex.getMessage());
+    }
+
+    @ExceptionHandler(IncorrectBookingStatusException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleUnknownStatusException(RuntimeException ex) {
+        return Map.of("error", ex.getCause().getCause().getMessage());
+    }
+
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            ItemNotFoundException.class,
+            UserIsNotOwnerException.class,
+            BookingNotFoundException.class,
+            UserHasNoAccessToBookingException.class,
+            CannotApproveBookingException.class,
+            CannotBookOwnedItemException.class
+    })
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFoundExceptions(RuntimeException ex) {
         return Map.of("message", ex.getMessage());
