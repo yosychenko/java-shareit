@@ -7,20 +7,14 @@ public class CommentMapper {
         return CommentDto.builder()
                 .id(comment.getId())
                 .text(comment.getText())
-                .item(comment.getItem())
-                .author(comment.getAuthor())
+                .authorName(comment.getAuthor().getName())
                 .created(comment.getCreated())
                 .build();
     }
 
     public static Comment fromCommentDto(CommentDto commentDto) {
         Comment comment = new Comment();
-        comment.setId(commentDto.getId());
         comment.setText(commentDto.getText());
-        comment.setItem(commentDto.getItem());
-        comment.setAuthor(commentDto.getAuthor());
-        comment.setCreated(commentDto.getCreated());
-
         return comment;
     }
 }

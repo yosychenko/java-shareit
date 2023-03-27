@@ -14,15 +14,12 @@ public class BookingMapper {
                 .build();
     }
 
-    public static Booking fromBookingDto(BookingDto bookingDto) {
-        Booking booking = new Booking();
-        booking.setId(bookingDto.getId());
-        booking.setStart(bookingDto.getStart());
-        booking.setEnd(bookingDto.getEnd());
-        booking.setItem(bookingDto.getItem());
-        booking.setBooker(bookingDto.getBooker());
-        booking.setStatus(bookingDto.getStatus());
-
-        return booking;
+    public static BookingTimeIntervalDto toBookingTimeIntervalDto(Booking booking) {
+        return BookingTimeIntervalDto.builder()
+                .id(booking.getId())
+                .start(booking.getStart())
+                .end(booking.getEnd())
+                .bookerId(booking.getBooker().getId())
+                .build();
     }
 }

@@ -105,8 +105,19 @@ public class BookingServiceImpl implements BookingService {
         if (bookingStatus.equals(BookingStatus.FUTURE)) {
             return bookingStorage.findBookingsByBookerAndStartAfterOrderByStartDesc(user, LocalDateTime.now());
         }
+        if (bookingStatus.equals(BookingStatus.PAST)) {
+            return bookingStorage.findBookingsByBookerAndEndBeforeOrderByStartDesc(user, LocalDateTime.now());
+        }
+        if (bookingStatus.equals(BookingStatus.CURRENT)) {
+            return bookingStorage.findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now());
+        }
 
         return bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(user, bookingStatus);
+    }
+
+    @Override
+    public Collection<Booking> getFinishedUserBookings(User user, Item item, BookingStatus bookingStatus) {
+        return bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(user, item, LocalDateTime.now(), bookingStatus);
     }
 
     @Override
@@ -119,6 +130,12 @@ public class BookingServiceImpl implements BookingService {
         if (bookingStatus.equals(BookingStatus.FUTURE)) {
             return bookingStorage.findBookingsByItemInAndStartAfterOrderByStartDesc(items, LocalDateTime.now());
         }
+        if (bookingStatus.equals(BookingStatus.PAST)) {
+            return bookingStorage.findBookingsByItemInAndEndBeforeOrderByStartDesc(items, LocalDateTime.now());
+        }
+        if (bookingStatus.equals(BookingStatus.CURRENT)) {
+            return bookingStorage.findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(items, LocalDateTime.now(), LocalDateTime.now());
+        }
 
         return bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(items, bookingStatus);
     }
@@ -130,7 +147,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Booking getNextItemBooking(Item item) {
-        return bookingStorage.findFirstByItemAndStartAfterOrderByStart(item, LocalDateTime.now());
+        return bookingStorage.getNextItemBooking(item);
     }
 
     private boolean isBookingPeriodValid(CreateBookingDto bookingDto) {

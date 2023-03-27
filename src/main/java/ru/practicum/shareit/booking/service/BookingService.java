@@ -4,6 +4,7 @@ import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.Collection;
 
@@ -15,6 +16,8 @@ public interface BookingService {
     Booking getBookingById(long bookingId, long userId);
 
     Collection<Booking> getUserBookings(long userId, BookingStatus bookingStatus);
+
+    Collection<Booking> getFinishedUserBookings(User user, Item item, BookingStatus bookingStatus);
 
     Collection<Booking> getOwnedItemsBookings(long ownerId, BookingStatus bookingStatus);
 

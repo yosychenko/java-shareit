@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.shareit.booking.exception.*;
+import ru.practicum.shareit.item.exception.CannotLeaveCommentException;
 import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
 import ru.practicum.shareit.user.exception.DuplicateEmailException;
@@ -38,7 +39,8 @@ public class ExceptionControllerAdvice {
     @ExceptionHandler({
             CannotBookUnavailableItemException.class,
             BookingPeriodIsNotValidException.class,
-            SameApproveStatusException.class
+            SameApproveStatusException.class,
+            CannotLeaveCommentException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleBadRequestExceptions(RuntimeException ex) {

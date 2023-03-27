@@ -10,6 +10,8 @@ public interface ItemService {
 
     Comment addComment(long itemId, long userId, Comment newComment);
 
+    Collection<Comment> getCommentsByItem(Item item);
+
     Item updateItem(long itemId, long userId, Item newItem);
 
     Item getItemById(long itemId);
