@@ -6,7 +6,7 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import javax.validation.Valid;
@@ -55,7 +55,7 @@ public class BookingController {
     @GetMapping
     Collection<BookingDto> getUserBookings(
             @RequestHeader("X-Sharer-User-Id") long userId,
-            @RequestParam(defaultValue = "ALL") BookingStatus state
+            @RequestParam(defaultValue = "ALL") BookingState state
     ) {
 
         return bookingService.getUserBookings(userId, state).stream()
@@ -66,7 +66,7 @@ public class BookingController {
     @GetMapping("/owner")
     Collection<BookingDto> getOwnedItemsBookings(
             @RequestHeader("X-Sharer-User-Id") long ownerId,
-            @RequestParam(defaultValue = "ALL") BookingStatus state
+            @RequestParam(defaultValue = "ALL") BookingState state
     ) {
         return bookingService.getOwnedItemsBookings(ownerId, state).stream()
                 .map(BookingMapper::toBookingDto)

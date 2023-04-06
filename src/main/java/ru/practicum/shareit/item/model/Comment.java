@@ -21,11 +21,11 @@ public class Comment {
     @Column(nullable = false)
     private String text;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "item", referencedColumnName = "id", nullable = false)
     private Item item;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "author", referencedColumnName = "id", nullable = false)
     private User author;
 
