@@ -65,9 +65,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public Booking approveBooking(long bookingId, long userId, boolean isApproved) {
+    public Booking approveBooking(long userId, long bookingId, boolean isApproved) {
         User owner = userService.getUserById(userId);
-        Booking bookingToApprove = getBookingById(bookingId, owner.getId());
+        Booking bookingToApprove = getBookingById(owner.getId(), bookingId);
 
         if (bookingToApprove.getItem().getOwner().getId() != owner.getId()) {
             throw new CannotApproveBookingException(bookingToApprove.getItem().getId(), owner.getId());
@@ -87,7 +87,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking getBookingById(long bookingId, long userId) {
+    public Booking getBookingById(long userId, long bookingId) {
         Booking booking = bookingStorage
                 .findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));

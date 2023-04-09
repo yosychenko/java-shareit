@@ -9,9 +9,9 @@ import java.util.Collection;
 public interface BookingService {
     Booking createBooking(long userId, CreateBookingDto newBooking);
 
-    Booking approveBooking(long bookingId, long userId, boolean isApproved);
+    Booking approveBooking(long userId, long bookingId, boolean isApproved);
 
-    Booking getBookingById(long bookingId, long userId);
+    Booking getBookingById(long userId, long bookingId);
 
     Collection<Booking> getUserBookings(long userId, BookingState state);
 

@@ -37,30 +37,30 @@ public class ItemController {
 
     @PostMapping("/{itemId}/comment")
     public CommentDto addComment(
-            @PathVariable long itemId,
             @RequestHeader(value = "X-Sharer-User-Id") long userId,
+            @PathVariable long itemId,
             @Valid @RequestBody CommentDto commentDto
     ) {
-        Comment comment = itemService.addComment(itemId, userId, CommentMapper.fromCommentDto(commentDto));
+        Comment comment = itemService.addComment(userId, itemId, CommentMapper.fromCommentDto(commentDto));
         return CommentMapper.toCommentDto(comment);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(
-            @PathVariable long itemId,
             @RequestHeader("X-Sharer-User-Id") long userId,
+            @PathVariable long itemId,
             @RequestBody ItemDto newItemDto
     ) {
-        Item updatedItem = itemService.updateItem(itemId, userId, ItemMapper.fromItemDto(newItemDto));
+        Item updatedItem = itemService.updateItem(userId, itemId, ItemMapper.fromItemDto(newItemDto));
         return ItemMapper.toItemDto(updatedItem);
     }
 
     @GetMapping("/{itemId}")
     public ItemDto getItemById(
-            @PathVariable long itemId,
-            @RequestHeader("X-Sharer-User-Id") long userId
+            @RequestHeader("X-Sharer-User-Id") long userId,
+            @PathVariable long itemId
     ) {
-        return itemService.getItemByIdWithBookingIntervals(itemId, userId);
+        return itemService.getItemByIdWithBookingIntervals(userId, itemId);
     }
 
     @GetMapping

@@ -25,6 +25,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+
 @Service
 public class ItemServiceImpl implements ItemService {
 
@@ -57,7 +60,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public Comment addComment(long itemId, long userId, Comment newComment) {
+    public Comment addComment(long userId, long itemId, Comment newComment) {
         User user = userService.getUserById(userId);
         Item item = getItemById(itemId);
         Collection<Booking> finishedBookings = bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(
@@ -82,7 +85,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public Item updateItem(long itemId, long userId, Item newItem) {
+    public Item updateItem(long userId, long itemId, Item newItem) {
         Item itemToUpdate = getItemById(itemId);
         User user = userService.getUserById(userId);
 
@@ -117,12 +120,12 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto getItemByIdWithBookingIntervals(long itemId, long userId) {
+    public ItemDto getItemByIdWithBookingIntervals(long userId, long itemId) {
         User user = userService.getUserById(userId);
         Item item = getItemById(itemId);
         ItemDto itemDto = ItemMapper.toItemDto(item);
         Collection<Comment> comments = getCommentsByItems(List.of(item));
-        itemDto.setComments(comments.stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+        itemDto.setComments(comments.stream().map(CommentMapper::toCommentDto).collect(toList()));
 
         if (item.getOwner().getId() == user.getId()) {
             List<Booking> lastBookings = bookingStorage.getItemsLastBookings(List.of(item));
@@ -151,7 +154,6 @@ public class ItemServiceImpl implements ItemService {
     public Collection<ItemDto> getUserItemsWithBookingIntervals(long userId) {
         List<ItemDto> itemDtos = new ArrayList<>();
         List<ItemDto> itemDtosNullIntervals = new ArrayList<>();
-        Map<Item, Collection<Comment>> itemToComments = new HashMap<>();
 
         User user = userService.getUserById(userId);
         Collection<Item> items = getUserItems(user.getId());
@@ -167,13 +169,9 @@ public class ItemServiceImpl implements ItemService {
         Collection<Comment> comments = commentStorage.getCommentsByItems(items);
 
         // Загрузим комментарии в Map
-        for (Comment comment : comments) {
-            if (itemToComments.containsKey(comment.getItem())) {
-                itemToComments.get(comment.getItem()).add(comment);
-            } else {
-                itemToComments.put(comment.getItem(), List.of(comment));
-            }
-        }
+        Map<Item, List<Comment>> itemToComments = comments
+                .stream()
+                .collect(groupingBy(Comment::getItem, toList()));
 
         for (Item item : items) {
             ItemDto itemDto = ItemMapper.toItemDto(item);
@@ -187,7 +185,7 @@ public class ItemServiceImpl implements ItemService {
             }
 
             if (itemComments != null) {
-                itemDto.setComments(itemComments.stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+                itemDto.setComments(itemComments.stream().map(CommentMapper::toCommentDto).collect(toList()));
             }
 
             if (lastBooking != null) {
