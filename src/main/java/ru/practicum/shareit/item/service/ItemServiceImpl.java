@@ -1,54 +1,102 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.storage.BookingRepository;
+import ru.practicum.shareit.item.dto.CommentMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.exception.CannotLeaveCommentException;
+import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.item.storage.CommentRepository;
+import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
-import java.util.Collection;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
-@Component
+@Service
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
+    private final ItemRepository itemStorage;
+    private final CommentRepository commentStorage;
+    private final UserService userService;
+    private final BookingRepository bookingStorage;
 
     @Autowired
-    public ItemServiceImpl(ItemStorage itemStorage, UserStorage userStorage) {
+    public ItemServiceImpl(
+            ItemRepository itemStorage,
+            CommentRepository commentStorage,
+            UserService userService,
+            BookingRepository bookingStorage
+    ) {
         this.itemStorage = itemStorage;
-        this.userStorage = userStorage;
+        this.commentStorage = commentStorage;
+        this.userService = userService;
+        this.bookingStorage = bookingStorage;
     }
 
     @Override
+    @Transactional
     public Item createItem(long userId, Item newItem) {
-        User owner = userStorage.getUserById(userId);
+        User owner = userService.getUserById(userId);
         newItem.setOwner(owner);
 
-        return itemStorage.createItem(newItem);
+        return itemStorage.save(newItem);
     }
 
     @Override
-    public Item updateItem(long itemId, long userId, ItemDto newItem) {
-        Item itemToUpdate = itemStorage.getItemById(itemId);
-        User user = userStorage.getUserById(userId);
+    @Transactional
+    public Comment addComment(long itemId, long userId, Comment newComment) {
+        User user = userService.getUserById(userId);
+        Item item = getItemById(itemId);
+        Collection<Booking> finishedBookings = bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(
+                user, item, LocalDateTime.now(), BookingState.APPROVED
+        );
+
+        if (finishedBookings.size() == 0) {
+            throw new CannotLeaveCommentException(userId, itemId);
+        }
+
+        newComment.setItem(item);
+        newComment.setAuthor(user);
+        newComment.setCreated(LocalDateTime.now());
+
+        return commentStorage.save(newComment);
+    }
+
+    @Override
+    public Collection<Comment> getCommentsByItems(Collection<Item> items) {
+        return commentStorage.getCommentsByItems(items);
+    }
+
+    @Override
+    @Transactional
+    public Item updateItem(long itemId, long userId, Item newItem) {
+        Item itemToUpdate = getItemById(itemId);
+        User user = userService.getUserById(userId);
 
         if (itemToUpdate.getOwner().getId() != user.getId()) {
             throw new UserIsNotOwnerException(userId, itemId);
         }
+        Item patchedItem = new Item();
 
-        Item patchedItem = Item.builder()
-                .id(itemToUpdate.getId())
-                .name(itemToUpdate.getName())
-                .description(itemToUpdate.getDescription())
-                .available(itemToUpdate.getAvailable())
-                .owner(itemToUpdate.getOwner())
-                .request(itemToUpdate.getRequest())
-                .build();
+        patchedItem.setId(itemToUpdate.getId());
+        patchedItem.setName(itemToUpdate.getName());
+        patchedItem.setDescription(itemToUpdate.getDescription());
+        patchedItem.setAvailable(itemToUpdate.getAvailable());
+        patchedItem.setOwner(itemToUpdate.getOwner());
+        patchedItem.setRequest(itemToUpdate.getRequest());
 
         if (newItem.getName() != null) {
             validateAndSetName(newItem.getName(), patchedItem);
@@ -60,24 +108,110 @@ public class ItemServiceImpl implements ItemService {
             validateAndSetIsAvailable(newItem.getAvailable(), patchedItem);
         }
 
-        return itemStorage.updateItem(patchedItem);
+        return itemStorage.save(patchedItem);
     }
 
     @Override
     public Item getItemById(long itemId) {
-        return itemStorage.getItemById(itemId);
+        return itemStorage.findById(itemId).orElseThrow(() -> new ItemNotFoundException(itemId));
     }
 
     @Override
-    public Collection<Item> getUserItems(long userId) {
-        User user = userStorage.getUserById(userId);
+    public ItemDto getItemByIdWithBookingIntervals(long itemId, long userId) {
+        User user = userService.getUserById(userId);
+        Item item = getItemById(itemId);
+        ItemDto itemDto = ItemMapper.toItemDto(item);
+        Collection<Comment> comments = getCommentsByItems(List.of(item));
+        itemDto.setComments(comments.stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
 
-        return itemStorage.getUserItems(user.getId());
+        if (item.getOwner().getId() == user.getId()) {
+            List<Booking> lastBookings = bookingStorage.getItemsLastBookings(List.of(item));
+            List<Booking> nextBookings = bookingStorage.getItemsNextBookings(List.of(item));
+
+            if (!lastBookings.isEmpty()) {
+                itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(lastBookings.get(0)));
+            }
+            if (!nextBookings.isEmpty()) {
+                itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(nextBookings.get(0)));
+            }
+        }
+
+        return itemDto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Collection<Item> getUserItems(long userId) {
+        User user = userService.getUserById(userId);
+        return itemStorage.findItemsByOwnerId(user.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Collection<ItemDto> getUserItemsWithBookingIntervals(long userId) {
+        List<ItemDto> itemDtos = new ArrayList<>();
+        List<ItemDto> itemDtosNullIntervals = new ArrayList<>();
+        Map<Item, Collection<Comment>> itemToComments = new HashMap<>();
+
+        User user = userService.getUserById(userId);
+        Collection<Item> items = getUserItems(user.getId());
+
+        Map<Item, Booking> lastBookings = bookingStorage
+                .getItemsLastBookings(items)
+                .stream()
+                .collect(Collectors.toMap(Booking::getItem, val -> val));
+        Map<Item, Booking> nextBookings = bookingStorage
+                .getItemsNextBookings(items)
+                .stream()
+                .collect(Collectors.toMap(Booking::getItem, val -> val));
+        Collection<Comment> comments = commentStorage.getCommentsByItems(items);
+
+        // Загрузим комментарии в Map
+        for (Comment comment : comments) {
+            if (itemToComments.containsKey(comment.getItem())) {
+                itemToComments.get(comment.getItem()).add(comment);
+            } else {
+                itemToComments.put(comment.getItem(), List.of(comment));
+            }
+        }
+
+        for (Item item : items) {
+            ItemDto itemDto = ItemMapper.toItemDto(item);
+            Booking lastBooking = lastBookings.get(item);
+            Booking nextBooking = nextBookings.get(item);
+            Collection<Comment> itemComments = itemToComments.get(item);
+
+            if (lastBooking == null && nextBooking == null) {
+                itemDtosNullIntervals.add(itemDto);
+                continue;
+            }
+
+            if (itemComments != null) {
+                itemDto.setComments(itemComments.stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+            }
+
+            if (lastBooking != null) {
+                itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(lastBooking));
+            }
+            if (nextBooking != null) {
+                itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(nextBooking));
+            }
+            itemDtos.add(itemDto);
+        }
+
+        // Айтемы без без известных интервалов бронирования - в конце списка
+        itemDtos.addAll(itemDtosNullIntervals);
+
+        return itemDtos;
     }
 
     @Override
     public Collection<Item> searchItems(String text) {
-        return itemStorage.searchItems(text);
+        if (text.isBlank()) {
+            return List.of();
+        }
+
+        return itemStorage.searchItems(text.toLowerCase());
     }
 
     private void validateAndSetName(@Valid String name, Item item) {
