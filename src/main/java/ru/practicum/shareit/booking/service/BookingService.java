@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking.service;
 
+import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
@@ -13,7 +14,7 @@ public interface BookingService {
 
     Booking getBookingById(long userId, long bookingId);
 
-    Collection<Booking> getUserBookings(long userId, BookingState state);
+    Collection<Booking> getUserBookings(long userId, BookingState state, Pageable pageable);
 
-    Collection<Booking> getOwnedItemsBookings(long ownerId, BookingState state);
+    Collection<Booking> getOwnedItemsBookings(long ownerId, BookingState state, Pageable pageable);
 }

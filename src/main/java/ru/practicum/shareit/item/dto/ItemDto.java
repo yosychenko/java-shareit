@@ -25,4 +25,5 @@ public class ItemDto {
     private BookingTimeIntervalDto lastBooking;
     private BookingTimeIntervalDto nextBooking;
     private Collection<CommentDto> comments;
+    private Long requestId;
 }

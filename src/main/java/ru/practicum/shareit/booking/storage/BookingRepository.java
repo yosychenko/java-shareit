@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking.storage;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.booking.model.Booking;
@@ -12,25 +13,25 @@ import java.util.Collection;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    Collection<Booking> findBookingsByBookerOrderByStartDesc(User user);
+    List<Booking> findBookingsByBookerOrderByStartDesc(User user, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStatusOrderByStartDesc(User user, BookingState state);
+    List<Booking> findBookingsByBookerAndStatusOrderByStartDesc(User user, BookingState state, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStartAfterOrderByStartDesc(User user, LocalDateTime currentTime);
+    List<Booking> findBookingsByBookerAndStartAfterOrderByStartDesc(User user, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndEndBeforeOrderByStartDesc(User user, LocalDateTime currentTime);
+    List<Booking> findBookingsByBookerAndEndBeforeOrderByStartDesc(User user, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(User user, LocalDateTime currentTime1, LocalDateTime currentTime2);
+    List<Booking> findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(User user, LocalDateTime currentTime1, LocalDateTime currentTime2, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInOrderByStartDesc(Collection<Item> items);
+    List<Booking> findBookingsByItemInOrderByStartDesc(Collection<Item> items, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndStatusOrderByStartDesc(Collection<Item> items, BookingState state);
+    List<Booking> findBookingsByItemInAndStatusOrderByStartDesc(Collection<Item> items, BookingState state, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndStartAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime);
+    List<Booking> findBookingsByItemInAndStartAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndEndBeforeOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime);
+    List<Booking> findBookingsByItemInAndEndBeforeOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime1, LocalDateTime currentTime2);
+    List<Booking> findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime1, LocalDateTime currentTime2, Pageable pageable);
 
     @Query(value = "SELECT id,\n" +
             "       start_ts,\n" +

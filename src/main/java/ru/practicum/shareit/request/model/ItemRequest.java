@@ -1,6 +1,9 @@
 package ru.practicum.shareit.request.model;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DynamicUpdate;
 import ru.practicum.shareit.user.model.User;
 
@@ -22,6 +25,7 @@ public class ItemRequest {
     @ManyToOne
     @JoinColumn(name = "requestor", referencedColumnName = "id", nullable = false)
     private User requestor;
-    @Column(nullable = false)
+    @Column(name = "created", nullable = false, insertable = false, updatable = false)
+    @CreationTimestamp
     private LocalDateTime created;
 }

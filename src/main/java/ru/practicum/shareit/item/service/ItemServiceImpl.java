@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingMapper;
@@ -17,12 +18,17 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.CommentRepository;
 import ru.practicum.shareit.item.storage.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -33,29 +39,44 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemStorage;
     private final CommentRepository commentStorage;
-    private final UserService userService;
     private final BookingRepository bookingStorage;
+    private final UserService userService;
+
+    private final ItemRequestService itemRequestService;
+
 
     @Autowired
     public ItemServiceImpl(
             ItemRepository itemStorage,
             CommentRepository commentStorage,
+            BookingRepository bookingStorage,
             UserService userService,
-            BookingRepository bookingStorage
+            ItemRequestService itemRequestService
     ) {
         this.itemStorage = itemStorage;
         this.commentStorage = commentStorage;
-        this.userService = userService;
         this.bookingStorage = bookingStorage;
+        this.userService = userService;
+        this.itemRequestService = itemRequestService;
     }
 
     @Override
     @Transactional
-    public Item createItem(long userId, Item newItem) {
+    public Item createItem(long userId, ItemDto newItemDto) {
         User owner = userService.getUserById(userId);
-        newItem.setOwner(owner);
 
-        return itemStorage.save(newItem);
+        Item item = new Item();
+        if (newItemDto.getRequestId() != null) {
+            ItemRequest itemRequest = itemRequestService.getItemRequestById(userId, newItemDto.getRequestId());
+            item.setRequest(itemRequest);
+        }
+        item.setName(newItemDto.getName());
+        item.setDescription(newItemDto.getDescription());
+        item.setAvailable(newItemDto.getAvailable());
+        item.setOwner(owner);
+
+
+        return itemStorage.save(item);
     }
 
     @Override
@@ -146,17 +167,23 @@ public class ItemServiceImpl implements ItemService {
     @Transactional(readOnly = true)
     public Collection<Item> getUserItems(long userId) {
         User user = userService.getUserById(userId);
-        return itemStorage.findItemsByOwnerId(user.getId());
+        return itemStorage.findItemsByOwner(user);
+    }
+
+    @Override
+    public Collection<Item> getUserItemsPageable(long userId, Pageable pageable) {
+        User user = userService.getUserById(userId);
+        return itemStorage.findItemsByOwnerId(user.getId(), pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<ItemDto> getUserItemsWithBookingIntervals(long userId) {
+    public Collection<ItemDto> getUserItemsWithBookingIntervals(long userId, Pageable pageable) {
         List<ItemDto> itemDtos = new ArrayList<>();
         List<ItemDto> itemDtosNullIntervals = new ArrayList<>();
 
         User user = userService.getUserById(userId);
-        Collection<Item> items = getUserItems(user.getId());
+        Collection<Item> items = getUserItemsPageable(user.getId(), pageable);
 
         Map<Item, Booking> lastBookings = bookingStorage
                 .getItemsLastBookings(items)
@@ -204,12 +231,12 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<Item> searchItems(String text) {
+    public Collection<Item> searchItems(String text, Pageable pageable) {
         if (text.isBlank()) {
             return List.of();
         }
 
-        return itemStorage.searchItems(text.toLowerCase());
+        return itemStorage.searchItems(text.toLowerCase(), pageable);
     }
 
     private void validateAndSetName(@Valid String name, Item item) {

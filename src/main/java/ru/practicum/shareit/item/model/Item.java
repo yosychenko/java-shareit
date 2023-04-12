@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.model;
 
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
@@ -25,11 +26,12 @@ public class Item {
     private String description;
     @Column(nullable = false)
     private Boolean available;
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "owner", referencedColumnName = "id", nullable = false)
     private User owner;
-    @Column
-    private Long request;
+    @ManyToOne
+    @JoinColumn(name = "request", referencedColumnName = "id")
+    private ItemRequest request;
 
     @Override
     public boolean equals(Object o) {

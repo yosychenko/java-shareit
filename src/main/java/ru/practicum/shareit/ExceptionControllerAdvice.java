@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.shareit.booking.exception.*;
+import ru.practicum.shareit.exception.PageableIsNotValidException;
 import ru.practicum.shareit.item.exception.CannotLeaveCommentException;
 import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
+import ru.practicum.shareit.request.exception.ItemRequestNotFoundException;
 import ru.practicum.shareit.user.exception.DuplicateEmailException;
 import ru.practicum.shareit.user.exception.UserNotFoundException;
 
@@ -40,7 +42,8 @@ public class ExceptionControllerAdvice {
             CannotBookUnavailableItemException.class,
             BookingPeriodIsNotValidException.class,
             SameApproveStatusException.class,
-            CannotLeaveCommentException.class
+            CannotLeaveCommentException.class,
+            PageableIsNotValidException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleBadRequestExceptions(RuntimeException ex) {
@@ -60,7 +63,8 @@ public class ExceptionControllerAdvice {
             BookingNotFoundException.class,
             UserHasNoAccessToBookingException.class,
             CannotApproveBookingException.class,
-            CannotBookOwnedItemException.class
+            CannotBookOwnedItemException.class,
+            ItemRequestNotFoundException.class
     })
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFoundExceptions(RuntimeException ex) {
