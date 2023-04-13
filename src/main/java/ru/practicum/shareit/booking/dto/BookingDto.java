@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 @Builder
 public class BookingDto {
     private long id;
-    @NotNull(message = "Дата начала брони не может быть пустой")
+    @NotNull(message = "Дата начала брони не может быть пустой.")
     private LocalDateTime start;
-    @NotNull(message = "Дата окончания брони не может быть пустой")
+    @NotNull(message = "Дата окончания брони не может быть пустой.")
     private LocalDateTime end;
     private ItemDtoSimple item;
     private UserDtoSimple booker;

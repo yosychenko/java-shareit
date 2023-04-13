@@ -20,7 +20,7 @@ public class ItemDto {
     @NotBlank(message = "Описание вещи не может быть пустым.")
     @Size(max = 1000, message = "Длина описания вещи не может превышать 1000 символов.")
     private String description;
-    @NotNull(message = "Статус доступности вещи должен быть указан")
+    @NotNull(message = "Статус доступности вещи должен быть указан.")
     private Boolean available;
     private BookingTimeIntervalDto lastBooking;
     private BookingTimeIntervalDto nextBooking;
