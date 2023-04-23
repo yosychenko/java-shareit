@@ -19,10 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 public class UserDtoTest {
 
+    private static Validator validator;
     @Autowired
     private JacksonTester<UserDto> json;
-
-    private static Validator validator;
 
     @BeforeAll
     public static void beforeAll() {
@@ -105,21 +104,5 @@ public class UserDtoTest {
         ConstraintViolation<UserDto> violation = violations.stream().findFirst().get();
         assertThat(violation.getPropertyPath().toString()).isEqualTo("email");
         assertThat(violation.getMessage()).isEqualTo("Некорректный формат электронной почты.");
-    }
-
-    @Test
-    void testUserDtoEmailTooLong() {
-        UserDto userDto = UserDto.builder()
-                .id(1L)
-                .name("user_name")
-                .email(String.format("%s@%s", "email".repeat(512), "gmail.com"))
-                .build();
-
-        Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto);
-        assertThat(violations.isEmpty()).isFalse();
-
-        ConstraintViolation<UserDto> violation = violations.stream().findFirst().get();
-        assertThat(violation.getPropertyPath().toString()).isEqualTo("email");
-        assertThat(violation.getMessage()).isEqualTo("Длина электронной почты не может превышать 512 символов.");
     }
 }

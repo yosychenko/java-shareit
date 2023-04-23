@@ -7,7 +7,6 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
 import ru.practicum.shareit.item.dto.ItemDtoSimpleWithStatus;
-import ru.practicum.shareit.user.dto.UserDtoSimple;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -23,10 +22,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JsonTest
 public class ItemRequestResponseDtoTest {
-    @Autowired
-    private JacksonTester<ItemRequestResponseDto> json;
     private static Collection<ItemDtoSimpleWithStatus> items;
     private static Validator validator;
+    @Autowired
+    private JacksonTester<ItemRequestResponseDto> json;
 
     @BeforeAll
     public static void beforeAll() {

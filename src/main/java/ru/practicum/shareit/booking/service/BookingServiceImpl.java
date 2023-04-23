@@ -16,7 +16,6 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -107,8 +106,7 @@ public class BookingServiceImpl implements BookingService {
         User user = userService.getUserById(userId);
 
         if (state.equals(BookingState.ALL)) {
-            List<Booking> bookings = bookingStorage.findBookingsByBookerOrderByStartDesc(user, pageable);
-            return bookings;
+            return bookingStorage.findBookingsByBookerOrderByStartDesc(user, pageable);
         }
         if (state.equals(BookingState.FUTURE)) {
             return bookingStorage.findBookingsByBookerAndStartAfterOrderByStartDesc(user, LocalDateTime.now(), pageable);

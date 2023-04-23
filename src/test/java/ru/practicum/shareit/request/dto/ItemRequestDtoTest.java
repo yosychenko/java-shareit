@@ -20,10 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JsonTest
 public class ItemRequestDtoTest {
-    @Autowired
-    private JacksonTester<ItemRequestDto> json;
     private static UserDtoSimple userDtoSimple;
     private static Validator validator;
+    @Autowired
+    private JacksonTester<ItemRequestDto> json;
 
     @BeforeAll
     public static void beforeAll() {

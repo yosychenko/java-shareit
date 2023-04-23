@@ -20,9 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 public class CreateBookingDtoTest {
 
+    private static Validator validator;
     @Autowired
     private JacksonTester<CreateBookingDto> json;
-    private static Validator validator;
 
     @BeforeAll
     public static void beforeAll() {

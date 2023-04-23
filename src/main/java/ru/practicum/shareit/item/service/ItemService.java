@@ -12,8 +12,6 @@ public interface ItemService {
 
     Comment addComment(long userId, long itemId, Comment newComment);
 
-    Collection<Comment> getCommentsByItems(Collection<Item> items);
-
     Item updateItem(long userId, long itemId, Item newItem);
 
     Item getItemById(long itemId);
@@ -21,8 +19,6 @@ public interface ItemService {
     ItemDto getItemByIdWithBookingIntervals(long userId, long itemId);
 
     Collection<Item> getUserItems(long userId);
-
-    Collection<Item> getUserItemsPageable(long userId, Pageable pageable);
 
     Collection<ItemDto> getUserItemsWithBookingIntervals(long userId, Pageable pageable);
 

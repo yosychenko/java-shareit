@@ -24,11 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 public class BookingDtoTest {
 
-    @Autowired
-    private JacksonTester<BookingDto> json;
     private static ItemDtoSimple itemDtoSimple;
     private static UserDtoSimple userDtoSimple;
     private static Validator validator;
+    @Autowired
+    private JacksonTester<BookingDto> json;
 
     @BeforeAll
     public static void beforeAll() {

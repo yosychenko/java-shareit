@@ -41,7 +41,6 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentStorage;
     private final BookingRepository bookingStorage;
     private final UserService userService;
-
     private final ItemRequestService itemRequestService;
 
 
@@ -88,7 +87,7 @@ public class ItemServiceImpl implements ItemService {
                 user, item, LocalDateTime.now(), BookingState.APPROVED
         );
 
-        if (finishedBookings.size() == 0) {
+        if (finishedBookings.isEmpty()) {
             throw new CannotLeaveCommentException(userId, itemId);
         }
 
@@ -99,9 +98,8 @@ public class ItemServiceImpl implements ItemService {
         return commentStorage.save(newComment);
     }
 
-    @Override
-    public Collection<Comment> getCommentsByItems(Collection<Item> items) {
-        return commentStorage.getCommentsByItems(items);
+    private Collection<Comment> getCommentsByItems(Collection<Item> items) {
+        return commentStorage.getCommentsByItemIn(items);
     }
 
     @Override
@@ -170,8 +168,7 @@ public class ItemServiceImpl implements ItemService {
         return itemStorage.findItemsByOwner(user);
     }
 
-    @Override
-    public Collection<Item> getUserItemsPageable(long userId, Pageable pageable) {
+    private Collection<Item> getUserItemsPageable(long userId, Pageable pageable) {
         User user = userService.getUserById(userId);
         return itemStorage.findItemsByOwnerId(user.getId(), pageable);
     }
@@ -193,7 +190,7 @@ public class ItemServiceImpl implements ItemService {
                 .getItemsNextBookings(items)
                 .stream()
                 .collect(Collectors.toMap(Booking::getItem, val -> val));
-        Collection<Comment> comments = commentStorage.getCommentsByItems(items);
+        Collection<Comment> comments = commentStorage.getCommentsByItemIn(items);
 
         // Загрузим комментарии в Map
         Map<Item, List<Comment>> itemToComments = comments

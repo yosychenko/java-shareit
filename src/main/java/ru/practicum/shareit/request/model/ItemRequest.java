@@ -9,6 +9,7 @@ import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @DynamicUpdate
@@ -25,7 +26,20 @@ public class ItemRequest {
     @ManyToOne
     @JoinColumn(name = "requestor", referencedColumnName = "id", nullable = false)
     private User requestor;
-    @Column(name = "created", nullable = false, insertable = false, updatable = false)
+    @Column(name = "created", nullable = false, insertable = false, updatable = false, columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()")
     @CreationTimestamp
     private LocalDateTime created;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ItemRequest)) return false;
+        ItemRequest that = (ItemRequest) o;
+        return id == that.id && Objects.equals(description, that.description) && Objects.equals(requestor, that.requestor) && Objects.equals(created, that.created);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, description, requestor, created);
+    }
 }

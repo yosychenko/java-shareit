@@ -21,12 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JsonTest
 public class ItemDtoTest {
-    @Autowired
-    private JacksonTester<ItemDto> json;
     private static BookingTimeIntervalDto bookingTimeIntervalDtoLast;
     private static BookingTimeIntervalDto bookingTimeIntervalDtoNext;
     private static CommentDto commentDto;
     private static Validator validator;
+    @Autowired
+    private JacksonTester<ItemDto> json;
 
     @BeforeAll
     public static void beforeAll() {
