@@ -13,8 +13,6 @@ import java.util.List;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     Collection<Item> findItemsByOwner(User owner);
 
-    Collection<Item> findItemsByOwnerAndRequestIsNotNull(User owner);
-
     List<Item> findItemsByOwnerId(long ownerId, Pageable pageable);
 
     Collection<Item> findItemsByRequestIn(Collection<ItemRequest> itemRequests);

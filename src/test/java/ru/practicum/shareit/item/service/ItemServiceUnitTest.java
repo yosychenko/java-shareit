@@ -224,12 +224,27 @@ public class ItemServiceUnitTest {
 
     @Test
     void testGetItemByIdWithBookingIntervals() {
+        Booking lastBooking = new Booking();
+        lastBooking.setStart(LocalDateTime.now().minusDays(7));
+        lastBooking.setEnd(LocalDateTime.now().minusDays(2));
+        lastBooking.setItem(item);
+        lastBooking.setBooker(requestor);
+        lastBooking.setStatus(BookingState.WAITING);
+
+        Booking nextBooking = new Booking();
+        nextBooking.setStart(LocalDateTime.now().plusDays(2));
+        nextBooking.setEnd(LocalDateTime.now().plusDays(7));
+        nextBooking.setItem(item);
+        nextBooking.setBooker(requestor);
+        nextBooking.setStatus(BookingState.WAITING);
+
         ItemDto expectedItemDto = ItemMapper.toItemDto(item);
         expectedItemDto.setComments(List.of(CommentMapper.toCommentDto(comment)));
 
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(userService.getUserById(anyLong())).thenReturn(requestor);
         when(commentStorage.getCommentsByItemIn(anyCollection())).thenReturn(List.of(comment));
+        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingState.class))).thenReturn(List.of(lastBooking, nextBooking));
 
         ItemDto resultItemDto = itemService.getItemByIdWithBookingIntervals(requestor.getId(), item.getId());
 
@@ -261,8 +276,7 @@ public class ItemServiceUnitTest {
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(userService.getUserById(anyLong())).thenReturn(owner);
         when(commentStorage.getCommentsByItemIn(anyCollection())).thenReturn(List.of(comment));
-        when(bookingStorage.getItemsLastBookings(anyCollection())).thenReturn(List.of(lastBooking));
-        when(bookingStorage.getItemsNextBookings(anyCollection())).thenReturn(List.of(nextBooking));
+        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingState.class))).thenReturn(List.of(nextBooking, lastBooking));
 
         ItemDto resultItemDto = itemService.getItemByIdWithBookingIntervals(owner.getId(), item.getId());
 

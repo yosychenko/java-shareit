@@ -46,7 +46,7 @@ public class ItemRequestController {
     }
 
     @GetMapping("/all")
-    Collection<ItemRequestResponseDto> getItemRequestsForUserOwnedItems(
+    Collection<ItemRequestResponseDto> getAllOtherUsersRequests(
             @RequestHeader("X-Sharer-User-Id") long userId,
             @RequestParam(defaultValue = "0") int from,
             @RequestParam(defaultValue = "2000") int size
@@ -57,7 +57,7 @@ public class ItemRequestController {
 
         int newFrom = PageableAdjuster.adjustFrom(from, size);
 
-        return itemRequestService.getItemRequestsForUserOwnedItems(userId, PageRequest.of(newFrom, size));
+        return itemRequestService.getAllOtherUsersRequests(userId, PageRequest.of(newFrom, size));
     }
 
     @GetMapping("/{requestId}")

@@ -11,7 +11,7 @@ public interface ItemRequestService {
 
     Collection<ItemRequestResponseDto> getAllItemRequestsFromUser(long userId);
 
-    Collection<ItemRequestResponseDto> getItemRequestsForUserOwnedItems(long userId, Pageable pageable);
+    Collection<ItemRequestResponseDto> getAllOtherUsersRequests(long userId, Pageable pageable);
 
     ItemRequestResponseDto getItemRequestByIdFullInfo(long userId, long itemRequestId);
 

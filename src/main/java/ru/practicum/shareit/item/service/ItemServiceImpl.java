@@ -25,11 +25,7 @@ import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -146,16 +142,15 @@ public class ItemServiceImpl implements ItemService {
         Collection<Comment> comments = getCommentsByItems(List.of(item));
         itemDto.setComments(comments.stream().map(CommentMapper::toCommentDto).collect(toList()));
 
-        if (item.getOwner().getId() == user.getId()) {
-            List<Booking> lastBookings = bookingStorage.getItemsLastBookings(List.of(item));
-            List<Booking> nextBookings = bookingStorage.getItemsNextBookings(List.of(item));
+        Collection<Booking> itemBookings = bookingStorage.findBookingsByItemInAndStatusNot(List.of(item), BookingState.REJECTED);
 
-            if (!lastBookings.isEmpty()) {
-                itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(lastBookings.get(0)));
-            }
-            if (!nextBookings.isEmpty()) {
-                itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(nextBookings.get(0)));
-            }
+        if (item.getOwner().getId() == user.getId() && !itemBookings.isEmpty()) {
+            LocalDateTime currentTime = LocalDateTime.now();
+            Optional<Booking> lastBooking = findLastBooking(itemBookings, currentTime);
+            Optional<Booking> nextBooking = findNextBooking(itemBookings, currentTime);
+
+            lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+            nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
         }
 
         return itemDto;
@@ -181,15 +176,7 @@ public class ItemServiceImpl implements ItemService {
 
         User user = userService.getUserById(userId);
         Collection<Item> items = getUserItemsPageable(user.getId(), pageable);
-
-        Map<Item, Booking> lastBookings = bookingStorage
-                .getItemsLastBookings(items)
-                .stream()
-                .collect(Collectors.toMap(Booking::getItem, val -> val));
-        Map<Item, Booking> nextBookings = bookingStorage
-                .getItemsNextBookings(items)
-                .stream()
-                .collect(Collectors.toMap(Booking::getItem, val -> val));
+        Collection<Booking> bookings = bookingStorage.findBookingsByItemInAndStatusNot(items, BookingState.REJECTED);
         Collection<Comment> comments = commentStorage.getCommentsByItemIn(items);
 
         // Загрузим комментарии в Map
@@ -197,31 +184,36 @@ public class ItemServiceImpl implements ItemService {
                 .stream()
                 .collect(groupingBy(Comment::getItem, toList()));
 
+        // Загрузим бронирования в Map
+        Map<Item, List<Booking>> itemToBookings = bookings
+                .stream()
+                .collect(groupingBy(Booking::getItem, toList()));
+
+        LocalDateTime currentTime = LocalDateTime.now();
         for (Item item : items) {
             ItemDto itemDto = ItemMapper.toItemDto(item);
-            Booking lastBooking = lastBookings.get(item);
-            Booking nextBooking = nextBookings.get(item);
-            Collection<Comment> itemComments = itemToComments.get(item);
 
-            if (lastBooking == null && nextBooking == null) {
-                itemDtosNullIntervals.add(itemDto);
-                continue;
-            }
-
+            List<Comment> itemComments = itemToComments.get(item);
             if (itemComments != null) {
                 itemDto.setComments(itemComments.stream().map(CommentMapper::toCommentDto).collect(toList()));
             }
 
-            if (lastBooking != null) {
-                itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(lastBooking));
+            List<Booking> itemBookings = itemToBookings.get(item);
+            if (itemBookings != null) {
+                Optional<Booking> lastBooking = findLastBooking(itemBookings, currentTime);
+                Optional<Booking> nextBooking = findNextBooking(itemBookings, currentTime);
+
+                lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+                nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+            } else {
+                itemDtosNullIntervals.add(itemDto);
+                continue;
             }
-            if (nextBooking != null) {
-                itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(nextBooking));
-            }
+
             itemDtos.add(itemDto);
         }
 
-        // Айтемы без без известных интервалов бронирования - в конце списка
+        // Вещи без известных интервалов бронирования - в конце списка
         itemDtos.addAll(itemDtosNullIntervals);
 
         return itemDtos;
@@ -234,6 +226,23 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return itemStorage.searchItems(text.toLowerCase(), pageable);
+    }
+
+    private Optional<Booking> findLastBooking(Collection<Booking> bookings, LocalDateTime currentTime) {
+        return bookings
+                .stream()
+                .filter(booking ->
+                        booking.getEnd().isBefore(currentTime) ||
+                                (booking.getStart().isBefore(currentTime) && booking.getEnd().isAfter(currentTime))
+                ).max(Comparator.comparing(Booking::getEnd));
+
+    }
+
+    private Optional<Booking> findNextBooking(Collection<Booking> bookings, LocalDateTime currentTime) {
+        return bookings
+                .stream()
+                .filter(booking -> booking.getStart().isAfter(currentTime))
+                .min(Comparator.comparing(Booking::getStart));
     }
 
     private void validateAndSetName(@Valid String name, Item item) {

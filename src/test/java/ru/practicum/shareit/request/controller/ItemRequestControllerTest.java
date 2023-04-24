@@ -171,7 +171,7 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestsForUserOwnedItems() throws Exception {
-        when(itemRequestService.getItemRequestsForUserOwnedItems(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
+        when(itemRequestService.getAllOtherUsersRequests(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
 
         mvc.perform(get("/requests/all?from=0&size=4")
                         .header("X-Sharer-User-Id", 1L)
@@ -195,7 +195,7 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestsForUserOwnedItemsWithoutParams() throws Exception {
-        when(itemRequestService.getItemRequestsForUserOwnedItems(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
+        when(itemRequestService.getAllOtherUsersRequests(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
 
         mvc.perform(get("/requests/all")
                         .header("X-Sharer-User-Id", 1L)

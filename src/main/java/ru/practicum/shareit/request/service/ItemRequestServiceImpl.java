@@ -75,11 +75,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<ItemRequestResponseDto> getItemRequestsForUserOwnedItems(long userId, Pageable pageable) {
+    public Collection<ItemRequestResponseDto> getAllOtherUsersRequests(long userId, Pageable pageable) {
         User user = userService.getUserById(userId);
-        Collection<Item> userOwnedItems = itemStorage.findItemsByOwnerAndRequestIsNotNull(user);
+        Collection<ItemRequest> otherUsersRequests = itemRequestStorage.findItemRequestsByRequestorNot(user, pageable);
+        Collection<Item> otherUsersRequestedItems = itemStorage.findItemsByRequestIn(otherUsersRequests);
 
-        Map<ItemRequest, List<Item>> requestToItemsMap = userOwnedItems
+        Map<ItemRequest, List<Item>> requestToItemsMap = otherUsersRequestedItems
                 .stream()
                 .collect(groupingBy(Item::getRequest, toList()));
 

@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.request.dto.ItemRequestMapper;
@@ -91,11 +92,12 @@ public class ItemRequestServiceUnitTest {
     }
 
     @Test
-    void testGetItemRequestsForUserOwnedItems() {
+    void testGetAllOtherUsersRequests() {
         when(userService.getUserById(anyLong())).thenReturn(owner);
-        when(itemStorage.findItemsByOwnerAndRequestIsNotNull(any(User.class))).thenReturn(List.of(item));
+        when(itemRequestStorage.findItemRequestsByRequestorNot(any(User.class), any(Pageable.class))).thenReturn(List.of(itemRequest));
+        when(itemStorage.findItemsByRequestIn(anyCollection())).thenReturn(List.of(item));
 
-        Collection<ItemRequestResponseDto> resultRequests = itemRequestService.getItemRequestsForUserOwnedItems(owner.getId(), PageRequest.of(0, 2000));
+        Collection<ItemRequestResponseDto> resultRequests = itemRequestService.getAllOtherUsersRequests(owner.getId(), PageRequest.of(0, 2000));
 
         assertThat(resultRequests).isNotEmpty();
         assertThat(resultRequests).contains(ItemRequestMapper.toItemRequestResponseDto(itemRequest, List.of(item)));
