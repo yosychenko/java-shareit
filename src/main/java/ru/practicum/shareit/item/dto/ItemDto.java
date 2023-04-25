@@ -1,8 +1,10 @@
 package ru.practicum.shareit.item.dto;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.dto.BookingTimeIntervalDto;
 
 import javax.validation.constraints.NotBlank;
@@ -12,6 +14,8 @@ import java.util.Collection;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ItemDto {
     private long id;
     @NotBlank(message = "Название вещи не может быть пустым.")
@@ -20,9 +24,10 @@ public class ItemDto {
     @NotBlank(message = "Описание вещи не может быть пустым.")
     @Size(max = 1000, message = "Длина описания вещи не может превышать 1000 символов.")
     private String description;
-    @NotNull(message = "Статус доступности вещи должен быть указан")
+    @NotNull(message = "Статус доступности вещи должен быть указан.")
     private Boolean available;
     private BookingTimeIntervalDto lastBooking;
     private BookingTimeIntervalDto nextBooking;
     private Collection<CommentDto> comments;
+    private Long requestId;
 }

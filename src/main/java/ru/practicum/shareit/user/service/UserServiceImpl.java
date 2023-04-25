@@ -2,6 +2,7 @@ package ru.practicum.shareit.user.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 import ru.practicum.shareit.user.exception.UserNotFoundException;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
@@ -10,6 +11,7 @@ import javax.validation.Valid;
 import java.util.Collection;
 
 @Service
+@Validated
 public class UserServiceImpl implements UserService {
     private final UserRepository userStorage;
 

@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.service;
 
+import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
@@ -7,21 +8,19 @@ import ru.practicum.shareit.item.model.Item;
 import java.util.Collection;
 
 public interface ItemService {
-    Item createItem(long userId, Item newItem);
+    Item createItem(long userId, ItemDto newItemDto);
 
-    Comment addComment(long itemId, long userId, Comment newComment);
+    Comment addComment(long userId, long itemId, Comment newComment);
 
-    Collection<Comment> getCommentsByItems(Collection<Item> items);
-
-    Item updateItem(long itemId, long userId, Item newItem);
+    Item updateItem(long userId, long itemId, Item newItem);
 
     Item getItemById(long itemId);
 
-    ItemDto getItemByIdWithBookingIntervals(long itemId, long userId);
+    ItemDto getItemByIdWithBookingIntervals(long userId, long itemId);
 
     Collection<Item> getUserItems(long userId);
 
-    Collection<ItemDto> getUserItemsWithBookingIntervals(long userId);
+    Collection<ItemDto> getUserItemsWithBookingIntervals(long userId, Pageable pageable);
 
-    Collection<Item> searchItems(String text);
+    Collection<Item> searchItems(String text, Pageable pageable);
 }

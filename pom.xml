@@ -57,6 +57,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.14.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -139,6 +144,11 @@
                     <version>0.8.8</version>
                     <configuration>
                         <output>file</output>
+                        <excludes>
+                            <exclude>**/exception/**</exclude>
+                            <exclude>**/dto/**Dto**</exclude>
+                            <exclude>**/model/**</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
@@ -198,6 +208,13 @@
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                            <configuration>
+                                <excludes>
+                                    <exclude>**/exception/**</exclude>
+                                    <exclude>**/dto/**Dto**</exclude>
+                                    <exclude>**/model/**</exclude>
+                                </excludes>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

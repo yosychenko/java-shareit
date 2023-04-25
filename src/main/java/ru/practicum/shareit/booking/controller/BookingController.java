@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
@@ -8,6 +9,9 @@ import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.PageableIsNotValidException;
+import ru.practicum.shareit.pagination.PageableAdjuster;
+import ru.practicum.shareit.pagination.PageableValidator;
 
 import javax.validation.Valid;
 import java.util.Collection;
@@ -35,30 +39,37 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}")
     BookingDto approveBooking(
-            @PathVariable long bookingId,
             @RequestHeader("X-Sharer-User-Id") long userId,
+            @PathVariable long bookingId,
             @RequestParam boolean approved
     ) {
-        Booking updatedBooking = bookingService.approveBooking(bookingId, userId, approved);
+        Booking updatedBooking = bookingService.approveBooking(userId, bookingId, approved);
         return BookingMapper.toBookingDto(updatedBooking);
     }
 
     @GetMapping("/{bookingId}")
     BookingDto getBookingById(
-            @PathVariable long bookingId,
-            @RequestHeader("X-Sharer-User-Id") long userId
+            @RequestHeader("X-Sharer-User-Id") long userId,
+            @PathVariable long bookingId
     ) {
-        Booking booking = bookingService.getBookingById(bookingId, userId);
+        Booking booking = bookingService.getBookingById(userId, bookingId);
         return BookingMapper.toBookingDto(booking);
     }
 
     @GetMapping
     Collection<BookingDto> getUserBookings(
             @RequestHeader("X-Sharer-User-Id") long userId,
-            @RequestParam(defaultValue = "ALL") BookingState state
+            @RequestParam(defaultValue = "ALL") BookingState state,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "2000") int size
     ) {
+        if (!PageableValidator.isValid(from, size)) {
+            throw new PageableIsNotValidException();
+        }
 
-        return bookingService.getUserBookings(userId, state).stream()
+        int newFrom = PageableAdjuster.adjustFrom(from, size);
+
+        return bookingService.getUserBookings(userId, state, PageRequest.of(newFrom, size)).stream()
                 .map(BookingMapper::toBookingDto)
                 .collect(Collectors.toList());
     }
@@ -66,9 +77,17 @@ public class BookingController {
     @GetMapping("/owner")
     Collection<BookingDto> getOwnedItemsBookings(
             @RequestHeader("X-Sharer-User-Id") long ownerId,
-            @RequestParam(defaultValue = "ALL") BookingState state
+            @RequestParam(defaultValue = "ALL") BookingState state,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "2000") int size
     ) {
-        return bookingService.getOwnedItemsBookings(ownerId, state).stream()
+        if (!PageableValidator.isValid(from, size)) {
+            throw new PageableIsNotValidException();
+        }
+
+        int newFrom = PageableAdjuster.adjustFrom(from, size);
+
+        return bookingService.getOwnedItemsBookings(ownerId, state, PageRequest.of(newFrom, size)).stream()
                 .map(BookingMapper::toBookingDto)
                 .collect(Collectors.toList());
     }

@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.storage;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.item.model.Item;
@@ -12,64 +12,27 @@ import java.util.Collection;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    Collection<Booking> findBookingsByBookerOrderByStartDesc(User user);
+    List<Booking> findBookingsByBookerOrderByStartDesc(User user, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStatusOrderByStartDesc(User user, BookingState state);
+    List<Booking> findBookingsByBookerAndStatusOrderByStartDesc(User user, BookingState state, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStartAfterOrderByStartDesc(User user, LocalDateTime currentTime);
+    List<Booking> findBookingsByBookerAndStartAfterOrderByStartDesc(User user, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndEndBeforeOrderByStartDesc(User user, LocalDateTime currentTime);
+    List<Booking> findBookingsByBookerAndEndBeforeOrderByStartDesc(User user, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(User user, LocalDateTime currentTime1, LocalDateTime currentTime2);
+    List<Booking> findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(User user, LocalDateTime currentTime1, LocalDateTime currentTime2, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInOrderByStartDesc(Collection<Item> items);
+    List<Booking> findBookingsByItemInAndStatusNot(Collection<Item> items, BookingState state);
 
-    Collection<Booking> findBookingsByItemInAndStatusOrderByStartDesc(Collection<Item> items, BookingState state);
+    List<Booking> findBookingsByItemInOrderByStartDesc(Collection<Item> items, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndStartAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime);
+    List<Booking> findBookingsByItemInAndStatusOrderByStartDesc(Collection<Item> items, BookingState state, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndEndBeforeOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime);
+    List<Booking> findBookingsByItemInAndStartAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime, Pageable pageable);
 
-    Collection<Booking> findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime1, LocalDateTime currentTime2);
+    List<Booking> findBookingsByItemInAndEndBeforeOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime, Pageable pageable);
 
-    @Query(value = "SELECT id,\n" +
-            "       start_ts,\n" +
-            "       end_ts,\n" +
-            "       item,\n" +
-            "       booker,\n" +
-            "       status\n" +
-            "FROM (SELECT b.id,\n" +
-            "             b.start_ts,\n" +
-            "             b.end_ts,\n" +
-            "             b.booker,\n" +
-            "             b.item,\n" +
-            "             b.status,\n" +
-            "             ROW_NUMBER() OVER (PARTITION\n" +
-            "                 BY\n" +
-            "                 b.item\n" +
-            "                 ORDER BY\n" +
-            "                     b.end_ts DESC ) AS rn\n" +
-            "      FROM bookings b\n" +
-            "      WHERE b.item IN ?1\n" +
-            "        AND (b.end_ts < CURRENT_TIMESTAMP OR (b.start_ts < CURRENT_TIMESTAMP AND b.end_ts > CURRENT_TIMESTAMP))\n" +
-            "        AND b.status != 'REJECTED') s\n" +
-            "WHERE s.rn = 1", nativeQuery = true)
-    List<Booking> getItemsLastBookings(Collection<Item> items);
-
-    @Query(value = "SELECT id, start_ts, end_ts, item, booker, status\n" +
-            "FROM (SELECT b.id,\n" +
-            "             b.start_ts,\n" +
-            "             b.end_ts,\n" +
-            "             b.booker,\n" +
-            "             b.item,\n" +
-            "             b.status,\n" +
-            "             ROW_NUMBER() OVER (PARTITION BY b.item ORDER BY b.start_ts) AS rn\n" +
-            "      FROM bookings b\n" +
-            "      WHERE b.item IN ?1\n" +
-            "        AND b.start_ts > CURRENT_TIMESTAMP\n" +
-            "        AND b.status != 'REJECTED') s\n" +
-            "WHERE s.rn = 1", nativeQuery = true)
-    List<Booking> getItemsNextBookings(Collection<Item> items);
+    List<Booking> findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(Collection<Item> items, LocalDateTime currentTime1, LocalDateTime currentTime2, Pageable pageable);
 
     Collection<Booking> getBookingsByBookerAndItemAndEndIsBeforeAndStatus(User user, Item item, LocalDateTime currentTime, BookingState state);
 }

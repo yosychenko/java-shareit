@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
@@ -65,9 +66,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public Booking approveBooking(long bookingId, long userId, boolean isApproved) {
+    public Booking approveBooking(long userId, long bookingId, boolean isApproved) {
         User owner = userService.getUserById(userId);
-        Booking bookingToApprove = getBookingById(bookingId, owner.getId());
+        Booking bookingToApprove = getBookingById(owner.getId(), bookingId);
 
         if (bookingToApprove.getItem().getOwner().getId() != owner.getId()) {
             throw new CannotApproveBookingException(bookingToApprove.getItem().getId(), owner.getId());
@@ -87,7 +88,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking getBookingById(long bookingId, long userId) {
+    public Booking getBookingById(long userId, long bookingId) {
         Booking booking = bookingStorage
                 .findById(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
@@ -101,44 +102,44 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<Booking> getUserBookings(long userId, BookingState state) {
+    public Collection<Booking> getUserBookings(long userId, BookingState state, Pageable pageable) {
         User user = userService.getUserById(userId);
 
         if (state.equals(BookingState.ALL)) {
-            return bookingStorage.findBookingsByBookerOrderByStartDesc(user);
+            return bookingStorage.findBookingsByBookerOrderByStartDesc(user, pageable);
         }
         if (state.equals(BookingState.FUTURE)) {
-            return bookingStorage.findBookingsByBookerAndStartAfterOrderByStartDesc(user, LocalDateTime.now());
+            return bookingStorage.findBookingsByBookerAndStartAfterOrderByStartDesc(user, LocalDateTime.now(), pageable);
         }
         if (state.equals(BookingState.PAST)) {
-            return bookingStorage.findBookingsByBookerAndEndBeforeOrderByStartDesc(user, LocalDateTime.now());
+            return bookingStorage.findBookingsByBookerAndEndBeforeOrderByStartDesc(user, LocalDateTime.now(), pageable);
         }
         if (state.equals(BookingState.CURRENT)) {
-            return bookingStorage.findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now());
+            return bookingStorage.findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now(), pageable);
         }
 
-        return bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(user, state);
+        return bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(user, state, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<Booking> getOwnedItemsBookings(long ownerId, BookingState state) {
+    public Collection<Booking> getOwnedItemsBookings(long ownerId, BookingState state, Pageable pageable) {
         Collection<Item> items = itemService.getUserItems(ownerId);
 
         if (state.equals(BookingState.ALL)) {
-            return bookingStorage.findBookingsByItemInOrderByStartDesc(items);
+            return bookingStorage.findBookingsByItemInOrderByStartDesc(items, pageable);
         }
         if (state.equals(BookingState.FUTURE)) {
-            return bookingStorage.findBookingsByItemInAndStartAfterOrderByStartDesc(items, LocalDateTime.now());
+            return bookingStorage.findBookingsByItemInAndStartAfterOrderByStartDesc(items, LocalDateTime.now(), pageable);
         }
         if (state.equals(BookingState.PAST)) {
-            return bookingStorage.findBookingsByItemInAndEndBeforeOrderByStartDesc(items, LocalDateTime.now());
+            return bookingStorage.findBookingsByItemInAndEndBeforeOrderByStartDesc(items, LocalDateTime.now(), pageable);
         }
         if (state.equals(BookingState.CURRENT)) {
-            return bookingStorage.findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(items, LocalDateTime.now(), LocalDateTime.now());
+            return bookingStorage.findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(items, LocalDateTime.now(), LocalDateTime.now(), pageable);
         }
 
-        return bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(items, state);
+        return bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(items, state, pageable);
     }
 
     private boolean isBookingPeriodValid(CreateBookingDto bookingDto) {
