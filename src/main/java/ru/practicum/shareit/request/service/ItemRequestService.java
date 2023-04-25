@@ -15,5 +15,5 @@ public interface ItemRequestService {
 
     ItemRequestResponseDto getItemRequestByIdFullInfo(long userId, long itemRequestId);
 
-    ItemRequest getItemRequestById(long itemRequestId);
+    ItemRequest getItemRequestById(long userId, long itemRequestId);
 }

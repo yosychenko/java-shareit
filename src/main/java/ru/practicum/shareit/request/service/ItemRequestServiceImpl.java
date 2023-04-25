@@ -77,14 +77,15 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     @Transactional(readOnly = true)
     public ItemRequestResponseDto getItemRequestByIdFullInfo(long userId, long itemRequestId) {
-        ItemRequest request = getItemRequestById(itemRequestId);
+        User user = userService.getUserById(userId);
+        ItemRequest request = getItemRequestById(user.getId(), itemRequestId);
         Collection<Item> requestedItems = itemStorage.findItemsByRequestIn(List.of(request));
 
         return ItemRequestMapper.toItemRequestResponseDto(request, requestedItems);
     }
 
     @Override
-    public ItemRequest getItemRequestById(long itemRequestId) {
+    public ItemRequest getItemRequestById(long userId, long itemRequestId) {
         return itemRequestStorage.findById(itemRequestId)
                 .orElseThrow(() -> new ItemRequestNotFoundException(itemRequestId));
     }

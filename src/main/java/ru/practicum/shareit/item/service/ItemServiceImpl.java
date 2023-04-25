@@ -62,7 +62,7 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = new Item();
         if (newItemDto.getRequestId() != null) {
-            ItemRequest itemRequest = itemRequestService.getItemRequestById(newItemDto.getRequestId());
+            ItemRequest itemRequest = itemRequestService.getItemRequestById(owner.getId(), newItemDto.getRequestId());
             item.setRequest(itemRequest);
         }
         item.setName(newItemDto.getName());
