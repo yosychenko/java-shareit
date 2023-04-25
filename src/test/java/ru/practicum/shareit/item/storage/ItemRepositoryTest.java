@@ -8,20 +8,26 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@DirtiesContext
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class ItemRepositoryTest {
     @Autowired
-    private TestEntityManager em;
+    private EntityManager em;
 
     @Autowired
     private ItemRepository itemRepository;
+
+    private User owner;
 
     private Item item;
 
@@ -33,11 +39,22 @@ public class ItemRepositoryTest {
 
     private Item item4NotAvail;
 
+    private ItemRequest itemRequest;
+
     @BeforeEach
     public void beforeEach() {
-        User owner = new User();
+        User requestor = new User();
+        requestor.setName("Booker");
+        requestor.setEmail("john.booker@mail.com");
+
+        owner = new User();
         owner.setName("John");
         owner.setEmail("john.doe@mail.com");
+
+        itemRequest = new ItemRequest();
+        itemRequest.setDescription("description");
+        itemRequest.setRequestor(requestor);
+        itemRequest.setCreated(LocalDateTime.of(2023, 4, 13, 10, 0));
 
         item = new Item();
         item.setName("Отвертка");
@@ -69,8 +86,40 @@ public class ItemRepositoryTest {
         item4NotAvail.setAvailable(false);
         item4NotAvail.setOwner(owner);
 
-
         em.persist(owner);
+        em.persist(requestor);
+        em.persist(itemRequest);
+        em.flush();
+
+    }
+
+    @Test
+    void testCreateItem() {
+        Item itemWithRequest = new Item();
+        itemWithRequest.setName("Отвертка c Запросом");
+        itemWithRequest.setDescription("С Аккумулятором и Запросом");
+        itemWithRequest.setAvailable(true);
+        itemWithRequest.setOwner(owner);
+        itemWithRequest.setRequest(itemRequest);
+
+        itemRepository.save(itemWithRequest);
+
+        long itemId = 1L;
+
+        TypedQuery<Item> query = em.createQuery("Select i from Item i where i.id = :id", Item.class);
+        Item itemFromDb = query.setParameter("id", itemId).getSingleResult();
+
+        assertThat(itemFromDb).isNotNull();
+        assertThat(itemFromDb.getId()).isEqualTo(itemId);
+        assertThat(itemFromDb.getName()).isEqualTo(itemWithRequest.getName());
+        assertThat(itemFromDb.getDescription()).isEqualTo(itemWithRequest.getDescription());
+        assertThat(itemFromDb.getAvailable()).isEqualTo(itemWithRequest.getAvailable());
+        assertThat(itemFromDb.getOwner()).isEqualTo(itemWithRequest.getOwner());
+        assertThat(itemFromDb.getRequest()).isEqualTo(itemWithRequest.getRequest());
+    }
+
+    @Test
+    void testSearchItemsFindOne() {
         em.persist(item);
         em.persist(itemNotAvail);
         em.persist(item2);
@@ -78,10 +127,6 @@ public class ItemRepositoryTest {
         em.persist(item4NotAvail);
         em.flush();
 
-    }
-
-    @Test
-    void testSearchItemsFindOne() {
         List<Item> foundItems = itemRepository.searchItems("отвертка", PageRequest.of(0, 2000));
 
         assertThat(foundItems).isNotEmpty();
@@ -92,6 +137,13 @@ public class ItemRepositoryTest {
 
     @Test
     void testSearchItemsFindMany() {
+        em.persist(item);
+        em.persist(itemNotAvail);
+        em.persist(item2);
+        em.persist(item3);
+        em.persist(item4NotAvail);
+        em.flush();
+
         List<Item> foundItems = itemRepository.searchItems("ключ", PageRequest.of(0, 2000));
 
         assertThat(foundItems).isNotEmpty();
@@ -102,6 +154,13 @@ public class ItemRepositoryTest {
 
     @Test
     void testSearchFindByDescription() {
+        em.persist(item);
+        em.persist(itemNotAvail);
+        em.persist(item2);
+        em.persist(item3);
+        em.persist(item4NotAvail);
+        em.flush();
+
         List<Item> foundItems = itemRepository.searchItems("на 15", PageRequest.of(0, 2000));
 
         assertThat(foundItems).isNotEmpty();
@@ -112,6 +171,13 @@ public class ItemRepositoryTest {
 
     @Test
     void testSearchFindNothing() {
+        em.persist(item);
+        em.persist(itemNotAvail);
+        em.persist(item2);
+        em.persist(item3);
+        em.persist(item4NotAvail);
+        em.flush();
+
         List<Item> foundItems = itemRepository.searchItems("монитор", PageRequest.of(0, 2000));
 
         assertThat(foundItems).isEmpty();

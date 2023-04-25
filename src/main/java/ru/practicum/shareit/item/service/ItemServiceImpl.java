@@ -62,7 +62,7 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = new Item();
         if (newItemDto.getRequestId() != null) {
-            ItemRequest itemRequest = itemRequestService.getItemRequestById(userId, newItemDto.getRequestId());
+            ItemRequest itemRequest = itemRequestService.getItemRequestById(newItemDto.getRequestId());
             item.setRequest(itemRequest);
         }
         item.setName(newItemDto.getName());
@@ -146,11 +146,7 @@ public class ItemServiceImpl implements ItemService {
 
         if (item.getOwner().getId() == user.getId() && !itemBookings.isEmpty()) {
             LocalDateTime currentTime = LocalDateTime.now();
-            Optional<Booking> lastBooking = findLastBooking(itemBookings, currentTime);
-            Optional<Booking> nextBooking = findNextBooking(itemBookings, currentTime);
-
-            lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
-            nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+            getLastAndNextBookings(itemDto, itemBookings, currentTime);
         }
 
         return itemDto;
@@ -200,11 +196,7 @@ public class ItemServiceImpl implements ItemService {
 
             List<Booking> itemBookings = itemToBookings.get(item);
             if (itemBookings != null) {
-                Optional<Booking> lastBooking = findLastBooking(itemBookings, currentTime);
-                Optional<Booking> nextBooking = findNextBooking(itemBookings, currentTime);
-
-                lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
-                nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+                getLastAndNextBookings(itemDto, itemBookings, currentTime);
             } else {
                 itemDtosNullIntervals.add(itemDto);
                 continue;
@@ -243,6 +235,14 @@ public class ItemServiceImpl implements ItemService {
                 .stream()
                 .filter(booking -> booking.getStart().isAfter(currentTime))
                 .min(Comparator.comparing(Booking::getStart));
+    }
+
+    private void getLastAndNextBookings(ItemDto itemDto, Collection<Booking> itemBookings, LocalDateTime currentTime) {
+        Optional<Booking> lastBooking = findLastBooking(itemBookings, currentTime);
+        Optional<Booking> nextBooking = findNextBooking(itemBookings, currentTime);
+
+        lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
+        nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
     }
 
     private void validateAndSetName(@Valid String name, Item item) {

@@ -56,22 +56,13 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         Collection<Item> requestedItems = itemStorage.findItemsByRequestInAndOwnerIsNot(userRequests, requestor);
 
         if (requestedItems.size() > 0) {
-            Map<ItemRequest, List<Item>> requestToItemsMap = requestedItems
-                    .stream()
-                    .collect(groupingBy(Item::getRequest, toList()));
-
-            Collection<ItemRequestResponseDto> result = new ArrayList<>();
-            for (var entry : requestToItemsMap.entrySet()) {
-                result.add(ItemRequestMapper.toItemRequestResponseDto(entry.getKey(), entry.getValue()));
-            }
-            return result;
+            return getItemRequestsWithResponses(requestedItems);
         }
 
         return userRequests.stream()
                 .map(request -> ItemRequestMapper.toItemRequestResponseDto(request, requestedItems))
                 .collect(toList());
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -80,7 +71,26 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         Collection<ItemRequest> otherUsersRequests = itemRequestStorage.findItemRequestsByRequestorNot(user, pageable);
         Collection<Item> otherUsersRequestedItems = itemStorage.findItemsByRequestIn(otherUsersRequests);
 
-        Map<ItemRequest, List<Item>> requestToItemsMap = otherUsersRequestedItems
+        return getItemRequestsWithResponses(otherUsersRequestedItems);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ItemRequestResponseDto getItemRequestByIdFullInfo(long userId, long itemRequestId) {
+        ItemRequest request = getItemRequestById(itemRequestId);
+        Collection<Item> requestedItems = itemStorage.findItemsByRequestIn(List.of(request));
+
+        return ItemRequestMapper.toItemRequestResponseDto(request, requestedItems);
+    }
+
+    @Override
+    public ItemRequest getItemRequestById(long itemRequestId) {
+        return itemRequestStorage.findById(itemRequestId)
+                .orElseThrow(() -> new ItemRequestNotFoundException(itemRequestId));
+    }
+
+    private Collection<ItemRequestResponseDto> getItemRequestsWithResponses(Collection<Item> requestedItems) {
+        Map<ItemRequest, List<Item>> requestToItemsMap = requestedItems
                 .stream()
                 .collect(groupingBy(Item::getRequest, toList()));
 
@@ -88,24 +98,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         for (var entry : requestToItemsMap.entrySet()) {
             result.add(ItemRequestMapper.toItemRequestResponseDto(entry.getKey(), entry.getValue()));
         }
-
         return result;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ItemRequestResponseDto getItemRequestByIdFullInfo(long userId, long itemRequestId) {
-        User user = userService.getUserById(userId);
-        ItemRequest request = getItemRequestById(user.getId(), itemRequestId);
-        Collection<Item> requestedItems = itemStorage.findItemsByRequestIn(List.of(request));
-
-        return ItemRequestMapper.toItemRequestResponseDto(request, requestedItems);
-    }
-
-    @Override
-    public ItemRequest getItemRequestById(long userId, long itemRequestId) {
-        return itemRequestStorage.findById(itemRequestId)
-                .orElseThrow(() -> new ItemRequestNotFoundException(itemRequestId));
     }
 
 }

@@ -132,7 +132,7 @@ public class ItemServiceUnitTest {
         ItemDto itemDto = ItemMapper.toItemDto(itemWithRequest);
 
         when(userService.getUserById(anyLong())).thenReturn(owner);
-        when(itemRequestService.getItemRequestById(anyLong(), anyLong())).thenReturn(itemRequest);
+        when(itemRequestService.getItemRequestById(anyLong())).thenReturn(itemRequest);
         when(itemStorage.save(any(Item.class))).thenReturn(itemWithRequest);
 
         Item createdItem = itemService.createItem(owner.getId(), itemDto);

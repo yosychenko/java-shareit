@@ -105,7 +105,6 @@ public class ItemRequestServiceUnitTest {
 
     @Test
     void testGetItemRequestByIdFullInfo() {
-        when(userService.getUserById(anyLong())).thenReturn(requestor);
         when(itemRequestStorage.findById(anyLong())).thenReturn(Optional.ofNullable(itemRequest));
         when(itemStorage.findItemsByRequestIn(anyCollection())).thenReturn(List.of(item));
 
