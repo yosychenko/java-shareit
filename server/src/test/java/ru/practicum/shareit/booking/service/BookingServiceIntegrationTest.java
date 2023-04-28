@@ -7,9 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.ShareItServer;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(classes = ShareItServer.class)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -74,6 +75,6 @@ public class BookingServiceIntegrationTest {
         assertThat(createdBooking.getEnd()).isEqualTo(end);
         assertThat(createdBooking.getItem()).usingRecursiveComparison().isEqualTo(item);
         assertThat(createdBooking.getBooker()).usingRecursiveComparison().isEqualTo(booker);
-        assertThat(createdBooking.getStatus()).isEqualTo(BookingState.WAITING);
+        assertThat(createdBooking.getStatus()).isEqualTo(BookingStatus.WAITING);
     }
 }

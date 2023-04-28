@@ -4,16 +4,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.storage.BookingRepository;
-import ru.practicum.shareit.item.dto.CommentMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.exception.CannotLeaveCommentException;
 import ru.practicum.shareit.item.exception.ItemNotFoundException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
+import ru.practicum.shareit.item.mapper.CommentMapper;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.CommentRepository;
@@ -23,7 +23,6 @@ import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -80,7 +79,7 @@ public class ItemServiceImpl implements ItemService {
         User user = userService.getUserById(userId);
         Item item = getItemById(itemId);
         Collection<Booking> finishedBookings = bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(
-                user, item, LocalDateTime.now(), BookingState.APPROVED
+                user, item, LocalDateTime.now(), BookingStatus.APPROVED
         );
 
         if (finishedBookings.isEmpty()) {
@@ -117,13 +116,13 @@ public class ItemServiceImpl implements ItemService {
         patchedItem.setRequest(itemToUpdate.getRequest());
 
         if (newItem.getName() != null) {
-            validateAndSetName(newItem.getName(), patchedItem);
+            patchedItem.setName(newItem.getName());
         }
         if (newItem.getDescription() != null) {
-            validateAndSetDescription(newItem.getDescription(), patchedItem);
+            patchedItem.setDescription(newItem.getDescription());
         }
         if (newItem.getAvailable() != null) {
-            validateAndSetIsAvailable(newItem.getAvailable(), patchedItem);
+            patchedItem.setAvailable(newItem.getAvailable());
         }
 
         return itemStorage.save(patchedItem);
@@ -142,7 +141,7 @@ public class ItemServiceImpl implements ItemService {
         Collection<Comment> comments = getCommentsByItems(List.of(item));
         itemDto.setComments(comments.stream().map(CommentMapper::toCommentDto).collect(toList()));
 
-        Collection<Booking> itemBookings = bookingStorage.findBookingsByItemInAndStatusNot(List.of(item), BookingState.REJECTED);
+        Collection<Booking> itemBookings = bookingStorage.findBookingsByItemInAndStatusNot(List.of(item), BookingStatus.REJECTED);
 
         if (item.getOwner().getId() == user.getId() && !itemBookings.isEmpty()) {
             LocalDateTime currentTime = LocalDateTime.now();
@@ -172,7 +171,7 @@ public class ItemServiceImpl implements ItemService {
 
         User user = userService.getUserById(userId);
         Collection<Item> items = getUserItemsPageable(user.getId(), pageable);
-        Collection<Booking> bookings = bookingStorage.findBookingsByItemInAndStatusNot(items, BookingState.REJECTED);
+        Collection<Booking> bookings = bookingStorage.findBookingsByItemInAndStatusNot(items, BookingStatus.REJECTED);
         Collection<Comment> comments = commentStorage.getCommentsByItemIn(items);
 
         // Загрузим комментарии в Map
@@ -243,17 +242,5 @@ public class ItemServiceImpl implements ItemService {
 
         lastBooking.ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
         nextBooking.ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toBookingTimeIntervalDto(booking)));
-    }
-
-    private void validateAndSetName(@Valid String name, Item item) {
-        item.setName(name);
-    }
-
-    private void validateAndSetDescription(@Valid String description, Item item) {
-        item.setDescription(description);
-    }
-
-    private void validateAndSetIsAvailable(@Valid Boolean isAvailable, Item item) {
-        item.setAvailable(isAvailable);
     }
 }

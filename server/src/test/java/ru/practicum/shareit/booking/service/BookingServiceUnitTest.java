@@ -9,10 +9,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import ru.practicum.shareit.booking.dto.BookingState;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.exception.*;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
@@ -88,10 +89,10 @@ public class BookingServiceUnitTest {
         bookingToApprove.setEnd(end);
         bookingToApprove.setItem(item);
         bookingToApprove.setBooker(booker);
-        bookingToApprove.setStatus(BookingState.WAITING);
+        bookingToApprove.setStatus(BookingStatus.WAITING);
 
         approvedBooking = copyBooking(bookingToApprove);
-        approvedBooking.setStatus(BookingState.APPROVED);
+        approvedBooking.setStatus(BookingStatus.APPROVED);
 
     }
 
@@ -174,7 +175,7 @@ public class BookingServiceUnitTest {
     @Test
     void testRejectBooking() {
         Booking rejectedBooking = copyBooking(bookingToApprove);
-        rejectedBooking.setStatus(BookingState.REJECTED);
+        rejectedBooking.setStatus(BookingStatus.REJECTED);
 
         when(userService.getUserById(anyLong())).thenReturn(owner);
         when(bookingStorage.findById(anyLong())).thenReturn(Optional.of(bookingToApprove));
@@ -273,7 +274,7 @@ public class BookingServiceUnitTest {
         Booking rejectedBooking = copyBooking(bookingToApprove);
         rejectedBooking.setStart(LocalDateTime.now().minusDays(1));
         rejectedBooking.setEnd(LocalDateTime.now().plusDays(2));
-        rejectedBooking.setStatus(BookingState.REJECTED);
+        rejectedBooking.setStatus(BookingStatus.REJECTED);
         when(bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(any(User.class), any(BookingState.class), any(Pageable.class)))
                 .thenReturn(List.of(rejectedBooking));
         Collection<Booking> bookingsREJECTED = bookingService.getUserBookings(booker.getId(), bookingState, PageRequest.of(0, 2000));
@@ -325,7 +326,7 @@ public class BookingServiceUnitTest {
         Booking rejectedBooking = copyBooking(bookingToApprove);
         rejectedBooking.setStart(LocalDateTime.now().minusDays(1));
         rejectedBooking.setEnd(LocalDateTime.now().plusDays(2));
-        rejectedBooking.setStatus(BookingState.REJECTED);
+        rejectedBooking.setStatus(BookingStatus.REJECTED);
         when(bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(anyCollection(), any(BookingState.class), any(Pageable.class)))
                 .thenReturn(List.of(rejectedBooking));
         Collection<Booking> bookingsREJECTED = bookingService.getOwnedItemsBookings(owner.getId(), bookingState, PageRequest.of(0, 2000));

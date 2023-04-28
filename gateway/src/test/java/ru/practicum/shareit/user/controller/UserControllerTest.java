@@ -11,10 +11,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
 import ru.practicum.shareit.TestUtils;
+import ru.practicum.shareit.user.client.UserClient;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.exception.UserNotFoundException;
+import ru.practicum.shareit.user.exceptiona.UserNotFoundException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerTest {
 
     @Mock
-    private UserService userService;
+    private UserClient userClient;
 
     @InjectMocks
     private UserController userController;

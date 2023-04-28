@@ -4,10 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.dto.BookingState;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
 import ru.practicum.shareit.booking.exception.*;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
@@ -40,10 +41,6 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public Booking createBooking(long userId, CreateBookingDto newBooking) {
-        if (!isBookingPeriodValid(newBooking)) {
-            throw new BookingPeriodIsNotValidException();
-        }
-
         Item itemToBook = itemService.getItemById(newBooking.getItemId());
         if (!itemToBook.getAvailable()) {
             throw new CannotBookUnavailableItemException(itemToBook.getId());
@@ -59,7 +56,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setEnd(newBooking.getEnd());
         booking.setItem(itemToBook);
         booking.setBooker(booker);
-        booking.setStatus(BookingState.WAITING);
+        booking.setStatus(BookingStatus.WAITING);
 
         return bookingStorage.save(booking);
     }
@@ -73,15 +70,15 @@ public class BookingServiceImpl implements BookingService {
         if (bookingToApprove.getItem().getOwner().getId() != owner.getId()) {
             throw new CannotApproveBookingException(bookingToApprove.getItem().getId(), owner.getId());
         }
-        if ((bookingToApprove.getStatus().equals(BookingState.APPROVED) && isApproved) ||
-                (bookingToApprove.getStatus().equals(BookingState.REJECTED) && !isApproved)) {
+        if ((bookingToApprove.getStatus().equals(BookingStatus.APPROVED) && isApproved) ||
+                (bookingToApprove.getStatus().equals(BookingStatus.REJECTED) && !isApproved)) {
             throw new SameApproveStatusException(bookingToApprove.getId(), bookingToApprove.getStatus());
         }
 
         if (isApproved) {
-            bookingToApprove.setStatus(BookingState.APPROVED);
+            bookingToApprove.setStatus(BookingStatus.APPROVED);
         } else {
-            bookingToApprove.setStatus(BookingState.REJECTED);
+            bookingToApprove.setStatus(BookingStatus.REJECTED);
         }
 
         return bookingStorage.save(bookingToApprove);
@@ -118,7 +115,7 @@ public class BookingServiceImpl implements BookingService {
             return bookingStorage.findBookingsByBookerAndStartBeforeAndEndAfterOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now(), pageable);
         }
 
-        return bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(user, state, pageable);
+        return bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(user, BookingStatus.valueOf(state.toString()), pageable);
     }
 
     @Override
@@ -139,18 +136,6 @@ public class BookingServiceImpl implements BookingService {
             return bookingStorage.findBookingsByItemInAndStartBeforeAndEndAfterOrderByStartDesc(items, LocalDateTime.now(), LocalDateTime.now(), pageable);
         }
 
-        return bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(items, state, pageable);
-    }
-
-    private boolean isBookingPeriodValid(CreateBookingDto bookingDto) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = bookingDto.getStart();
-        LocalDateTime end = bookingDto.getEnd();
-
-        return !start.equals(end) &&
-                !start.isAfter(end) &&
-                !end.isBefore(start) &&
-                !end.isBefore(now) &&
-                !start.isBefore(now);
+        return bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(items, BookingStatus.valueOf(state.toString()), pageable);
     }
 }

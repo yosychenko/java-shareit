@@ -3,11 +3,10 @@ package ru.practicum.shareit.user.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
-import javax.validation.Valid;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -22,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping
-    public UserDto createUser(@Valid @RequestBody UserDto newUserDto) {
+    public UserDto createUser(@RequestBody UserDto newUserDto) {
         User createdUser = userService.createUser(UserMapper.fromUserDto(newUserDto));
         return UserMapper.toUserDto(createdUser);
     }

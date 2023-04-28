@@ -6,24 +6,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
 import ru.practicum.shareit.TestUtils;
+import ru.practicum.shareit.booking.client.BookingClient;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingState;
 import ru.practicum.shareit.booking.dto.CreateBookingDto;
-import ru.practicum.shareit.booking.exception.BookingNotFoundException;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
-import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.item.dto.ItemDtoSimple;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dto.UserDtoSimple;
-import ru.practicum.shareit.user.exception.UserNotFoundException;
-import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,14 +31,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 public class BookingControllerTest {
     @Mock
-    private BookingService bookingService;
+    private BookingClient bookingClient;
 
     @InjectMocks
     private BookingController bookingController;
 
     private MockMvc mvc;
-
-    private Booking booking;
 
     private CreateBookingDto createBookingDto;
 
@@ -102,7 +93,7 @@ public class BookingControllerTest {
 
     @Test
     void testCreateBooking() throws Exception {
-        when(bookingService.createBooking(anyLong(), any(CreateBookingDto.class))).thenReturn(booking);
+        when(bookingClient.createBooking(anyLong(), any(CreateBookingDto.class))).thenReturn(booking);
 
         mvc.perform(post("/bookings")
                         .content(TestUtils.asJsonString(createBookingDto))
@@ -130,7 +121,7 @@ public class BookingControllerTest {
 
     @Test
     void testApproveBooking() throws Exception {
-        when(bookingService.approveBooking(anyLong(), anyLong(), anyBoolean())).thenReturn(booking);
+        when(bookingClient.approveBooking(anyLong(), anyLong(), anyBoolean())).thenReturn(booking);
 
         mvc.perform(patch("/bookings/1?approved=true")
                         .content(TestUtils.asJsonString(createBookingDto))
@@ -158,7 +149,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetBookingById() throws Exception {
-        when(bookingService.getBookingById(anyLong(), anyLong())).thenReturn(booking);
+        when(bookingClient.getBookingById(anyLong(), anyLong())).thenReturn(booking);
 
 
         mvc.perform(get("/bookings/1")
@@ -185,7 +176,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetBookingByIdNonExistentId() throws Exception {
-        when(bookingService.getBookingById(anyLong(), anyLong())).thenThrow(new BookingNotFoundException(1L));
+        when(bookingClient.getBookingById(anyLong(), anyLong())).thenThrow(new BookingNotFoundException(1L));
 
         mvc.perform(get("/bookings/1")
                         .header("X-Sharer-User-Id", 1L)
@@ -197,7 +188,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetUserBookings() throws Exception {
-        when(bookingService.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
+        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
 
         mvc.perform(get("/bookings")
                         .header("X-Sharer-User-Id", 1L)
@@ -225,7 +216,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetUserBookingsNonExistentUser() throws Exception {
-        when(bookingService.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenThrow(new UserNotFoundException(1L));
+        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenThrow(new UserNotFoundException(1L));
 
         mvc.perform(get("/bookings")
                         .header("X-Sharer-User-Id", 1L)
@@ -237,7 +228,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetOwnedItemsBookings() throws Exception {
-        when(bookingService.getOwnedItemsBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
+        when(bookingClient.getOwnedItemsBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
 
 
         mvc.perform(get("/bookings/owner")

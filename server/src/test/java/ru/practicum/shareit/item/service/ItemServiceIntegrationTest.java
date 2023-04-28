@@ -8,11 +8,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.ShareItServer;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
-import ru.practicum.shareit.item.dto.CommentMapper;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.mapper.CommentMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(classes = ShareItServer.class)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -69,14 +70,14 @@ public class ItemServiceIntegrationTest {
         lastBooking.setEnd(LocalDateTime.now().minusDays(2));
         lastBooking.setItem(item);
         lastBooking.setBooker(booker);
-        lastBooking.setStatus(BookingState.WAITING);
+        lastBooking.setStatus(BookingStatus.WAITING);
 
         nextBooking = new Booking();
         nextBooking.setStart(LocalDateTime.now().plusDays(4));
         nextBooking.setEnd(LocalDateTime.now().plusDays(5));
         nextBooking.setItem(item);
         nextBooking.setBooker(booker);
-        nextBooking.setStatus(BookingState.WAITING);
+        nextBooking.setStatus(BookingStatus.WAITING);
 
         comment = new Comment();
         comment.setText("comment");

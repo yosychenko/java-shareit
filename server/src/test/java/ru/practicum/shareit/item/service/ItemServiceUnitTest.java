@@ -8,15 +8,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.storage.BookingRepository;
-import ru.practicum.shareit.item.dto.CommentMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.exception.CannotLeaveCommentException;
 import ru.practicum.shareit.item.exception.UserIsNotOwnerException;
+import ru.practicum.shareit.item.mapper.CommentMapper;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.CommentRepository;
@@ -149,12 +149,12 @@ public class ItemServiceUnitTest {
         booking.setEnd(LocalDateTime.now().plusDays(2));
         booking.setItem(item);
         booking.setBooker(new User());
-        booking.setStatus(BookingState.WAITING);
+        booking.setStatus(BookingStatus.WAITING);
 
         when(userService.getUserById(anyLong())).thenReturn(requestor);
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(
-                bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(any(User.class), any(Item.class), any(LocalDateTime.class), any(BookingState.class))
+                bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(any(User.class), any(Item.class), any(LocalDateTime.class), any(BookingStatus.class))
         ).thenReturn(List.of(booking));
 
         when(commentStorage.save(any(Comment.class))).thenReturn(comment);
@@ -173,7 +173,7 @@ public class ItemServiceUnitTest {
         booking.setEnd(LocalDateTime.now().plusDays(2));
         booking.setItem(item);
         booking.setBooker(new User());
-        booking.setStatus(BookingState.WAITING);
+        booking.setStatus(BookingStatus.WAITING);
 
         Comment comment = new Comment();
         comment.setText("comment");
@@ -185,7 +185,7 @@ public class ItemServiceUnitTest {
         when(userService.getUserById(anyLong())).thenReturn(requestor);
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(
-                bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(any(User.class), any(Item.class), any(LocalDateTime.class), any(BookingState.class))
+                bookingStorage.getBookingsByBookerAndItemAndEndIsBeforeAndStatus(any(User.class), any(Item.class), any(LocalDateTime.class), any(BookingStatus.class))
         ).thenReturn(List.of());
 
         assertThatThrownBy(() -> itemService.addComment(owner.getId(), item.getId(), comment))
@@ -229,14 +229,14 @@ public class ItemServiceUnitTest {
         lastBooking.setEnd(LocalDateTime.now().minusDays(2));
         lastBooking.setItem(item);
         lastBooking.setBooker(requestor);
-        lastBooking.setStatus(BookingState.WAITING);
+        lastBooking.setStatus(BookingStatus.WAITING);
 
         Booking nextBooking = new Booking();
         nextBooking.setStart(LocalDateTime.now().plusDays(2));
         nextBooking.setEnd(LocalDateTime.now().plusDays(7));
         nextBooking.setItem(item);
         nextBooking.setBooker(requestor);
-        nextBooking.setStatus(BookingState.WAITING);
+        nextBooking.setStatus(BookingStatus.WAITING);
 
         ItemDto expectedItemDto = ItemMapper.toItemDto(item);
         expectedItemDto.setComments(List.of(CommentMapper.toCommentDto(comment)));
@@ -244,7 +244,7 @@ public class ItemServiceUnitTest {
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(userService.getUserById(anyLong())).thenReturn(requestor);
         when(commentStorage.getCommentsByItemIn(anyCollection())).thenReturn(List.of(comment));
-        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingState.class))).thenReturn(List.of(lastBooking, nextBooking));
+        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingStatus.class))).thenReturn(List.of(lastBooking, nextBooking));
 
         ItemDto resultItemDto = itemService.getItemByIdWithBookingIntervals(requestor.getId(), item.getId());
 
@@ -259,14 +259,14 @@ public class ItemServiceUnitTest {
         lastBooking.setEnd(LocalDateTime.now().minusDays(2));
         lastBooking.setItem(item);
         lastBooking.setBooker(requestor);
-        lastBooking.setStatus(BookingState.WAITING);
+        lastBooking.setStatus(BookingStatus.WAITING);
 
         Booking nextBooking = new Booking();
         nextBooking.setStart(LocalDateTime.now().plusDays(4));
         nextBooking.setEnd(LocalDateTime.now().plusDays(5));
         nextBooking.setItem(item);
         nextBooking.setBooker(requestor);
-        nextBooking.setStatus(BookingState.WAITING);
+        nextBooking.setStatus(BookingStatus.WAITING);
 
         ItemDto expectedItemDto = ItemMapper.toItemDto(item);
         expectedItemDto.setComments(List.of(CommentMapper.toCommentDto(comment)));
@@ -276,7 +276,7 @@ public class ItemServiceUnitTest {
         when(itemStorage.findById(anyLong())).thenReturn(Optional.ofNullable(item));
         when(userService.getUserById(anyLong())).thenReturn(owner);
         when(commentStorage.getCommentsByItemIn(anyCollection())).thenReturn(List.of(comment));
-        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingState.class))).thenReturn(List.of(nextBooking, lastBooking));
+        when(bookingStorage.findBookingsByItemInAndStatusNot(anyCollection(), any(BookingStatus.class))).thenReturn(List.of(nextBooking, lastBooking));
 
         ItemDto resultItemDto = itemService.getItemByIdWithBookingIntervals(owner.getId(), item.getId());
 

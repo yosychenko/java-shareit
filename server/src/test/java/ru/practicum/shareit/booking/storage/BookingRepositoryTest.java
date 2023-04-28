@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import ru.practicum.shareit.ShareItServer;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
+@ContextConfiguration(classes = ShareItServer.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class BookingRepositoryTest {
     @Autowired
@@ -62,7 +65,7 @@ public class BookingRepositoryTest {
         booking.setEnd(LocalDateTime.now().plusDays(2));
         booking.setItem(item);
         booking.setBooker(booker);
-        booking.setStatus(BookingState.WAITING);
+        booking.setStatus(BookingStatus.WAITING);
 
         bookingRepository.save(booking);
 
@@ -86,7 +89,7 @@ public class BookingRepositoryTest {
         booking.setEnd(LocalDateTime.now().plusDays(2));
         booking.setItem(item);
         booking.setBooker(booker);
-        booking.setStatus(BookingState.WAITING);
+        booking.setStatus(BookingStatus.WAITING);
 
         assertThatThrownBy(() -> bookingRepository.save(booking)).isInstanceOf(DataIntegrityViolationException.class);
     }
