@@ -1,6 +1,9 @@
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="ShareItGateway" type="Application" factoryName="Application"
                    nameIsGenerated="true">
+        <envs>
+            <env name="SHAREIT_SERVER_URL" value="http://localhost:9090"/>
+        </envs>
         <option name="MAIN_CLASS_NAME" value="ru.practicum.shareit.ShareItGateway"/>
         <module name="shareit-gateway"/>
         <extension name="coverage">

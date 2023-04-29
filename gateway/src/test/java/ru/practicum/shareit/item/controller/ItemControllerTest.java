@@ -6,23 +6,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
 import ru.practicum.shareit.TestUtils;
 import ru.practicum.shareit.booking.dto.BookingTimeIntervalDto;
+import ru.practicum.shareit.item.client.ItemClient;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.exception.ItemNotFoundException;
-import ru.practicum.shareit.item.model.Comment;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.request.model.ItemRequest;
-import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ItemControllerTest {
 
     @Mock
-    private ItemService itemService;
+    private ItemClient itemClient;
 
     @InjectMocks
     private ItemController itemController;
@@ -48,35 +46,24 @@ public class ItemControllerTest {
 
     private CommentDto commentDto;
 
-    private Item item;
+    private ResponseEntity<Object> itemResponse;
 
-    private Comment comment;
+    private ResponseEntity<Object> commentResponse;
 
     @BeforeEach
     void beforeEach() {
         BookingTimeIntervalDto bookingTimeIntervalDtoLast = BookingTimeIntervalDto.builder()
                 .id(1L)
-                .start(LocalDateTime.of(2023, 4, 13, 10, 0))
-                .end(LocalDateTime.of(2023, 4, 20, 10, 0))
+                .start(LocalDateTime.now().minusDays(10))
+                .end(LocalDateTime.now().minusDays(5))
                 .bookerId(1L)
                 .build();
         BookingTimeIntervalDto bookingTimeIntervalDtoNext = BookingTimeIntervalDto.builder()
                 .id(1L)
-                .start(LocalDateTime.of(2023, 5, 13, 10, 0))
-                .end(LocalDateTime.of(2023, 5, 20, 10, 0))
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
                 .bookerId(1L)
                 .build();
-
-        User user = new User();
-        user.setId(1L);
-        user.setName("John");
-        user.setEmail("john.doe@mail.com");
-
-        ItemRequest itemRequest = new ItemRequest();
-        itemRequest.setId(1L);
-        itemRequest.setDescription("description");
-        itemRequest.setRequestor(user);
-        itemRequest.setCreated(LocalDateTime.of(2023, 4, 13, 10, 0));
 
         mvc = MockMvcBuilders
                 .standaloneSetup(itemController)
@@ -112,26 +99,20 @@ public class ItemControllerTest {
                 .requestId(1L)
                 .build();
 
-        item = new Item();
-        item.setId(1L);
-        item.setName("item_name");
-        item.setDescription("item_description");
-        item.setAvailable(true);
-        item.setOwner(user);
-        item.setRequest(itemRequest);
+        itemResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(itemDto),
+                HttpStatus.OK
+        );
 
-        comment = new Comment();
-        comment.setId(1L);
-        comment.setText("comment");
-        comment.setAuthor(user);
-        comment.setItem(item);
-        comment.setCreated(LocalDateTime.of(2023, 4, 20, 10, 0));
-
+        commentResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(commentDto),
+                HttpStatus.OK
+        );
     }
 
     @Test
     void testCreateItem() throws Exception {
-        when(itemService.createItem(anyLong(), any())).thenReturn(item);
+        when(itemClient.createItem(anyLong(), any())).thenReturn(itemResponse);
 
         mvc.perform(post("/items")
                         .content(TestUtils.asJsonString(itemDto))
@@ -147,7 +128,7 @@ public class ItemControllerTest {
 
     @Test
     void testAddComment() throws Exception {
-        when(itemService.addComment(anyLong(), anyLong(), any())).thenReturn(comment);
+        when(itemClient.addComment(anyLong(), anyLong(), any())).thenReturn(commentResponse);
 
         mvc.perform(post("/items/1/comment")
                         .content(TestUtils.asJsonString(commentDto))
@@ -156,7 +137,7 @@ public class ItemControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(commentDto.getId()), Long.class))
-                .andExpect(jsonPath("$.text", is(comment.getText())))
+                .andExpect(jsonPath("$.text", is(commentDto.getText())))
                 .andExpect(jsonPath("$.authorName", is(commentDto.getAuthorName())))
                 .andExpect(jsonPath("$.created[0]", is(commentDto.getCreated().getYear())))
                 .andExpect(jsonPath("$.created[1]", is(commentDto.getCreated().getMonthValue())))
@@ -167,7 +148,13 @@ public class ItemControllerTest {
 
     @Test
     void testUpdateItem() throws Exception {
-        when(itemService.updateItem(anyLong(), anyLong(), any())).thenReturn(item);
+        itemDto.setDescription("updatedDesc");
+        itemResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(itemDto),
+                HttpStatus.OK
+        );
+
+        when(itemClient.updateItem(anyLong(), anyLong(), any())).thenReturn(itemResponse);
 
         mvc.perform(patch("/items/1")
                         .content(TestUtils.asJsonString(itemDto))
@@ -183,7 +170,7 @@ public class ItemControllerTest {
 
     @Test
     void testGetItemById() throws Exception {
-        when(itemService.getItemByIdWithBookingIntervals(anyLong(), anyLong())).thenReturn(itemDto);
+        when(itemClient.getItemById(anyLong(), anyLong())).thenReturn(itemResponse);
 
         mvc.perform(get("/items/1")
                         .content(TestUtils.asJsonString(itemDto))
@@ -198,7 +185,12 @@ public class ItemControllerTest {
 
     @Test
     void testGetItemByIdNonExistentItem() throws Exception {
-        when(itemService.getItemByIdWithBookingIntervals(anyLong(), anyLong())).thenThrow(new ItemNotFoundException(1L));
+        itemResponse = new ResponseEntity<>(
+                Map.of("message", "Вещь c ID=1 не найдена."),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(itemClient.getItemById(anyLong(), anyLong())).thenReturn(itemResponse);
 
         mvc.perform(get("/items/1")
                         .content(TestUtils.asJsonString(itemDto))
@@ -211,7 +203,12 @@ public class ItemControllerTest {
 
     @Test
     void testGetUserItems() throws Exception {
-        when(itemService.getUserItemsWithBookingIntervals(anyLong(), any())).thenReturn(List.of(itemDtoWithNulls));
+        itemResponse = new ResponseEntity<>(
+                List.of(itemDtoWithNulls),
+                HttpStatus.OK
+        );
+
+        when(itemClient.getUserItems(anyLong(), anyInt(), anyInt())).thenReturn(itemResponse);
 
         mvc.perform(get("/items?from=1&size=20")
                         .content(TestUtils.asJsonString(itemDto))
@@ -228,7 +225,12 @@ public class ItemControllerTest {
 
     @Test
     void testSearchItems() throws Exception {
-        when(itemService.searchItems(anyString(), any())).thenReturn(List.of(item));
+        itemResponse = new ResponseEntity<>(
+                List.of(itemDto),
+                HttpStatus.OK
+        );
+
+        when(itemClient.searchItems(anyLong(), anyString(), anyInt(), anyInt())).thenReturn(itemResponse);
 
         mvc.perform(get("/items/search?text=search&from=1&size=20")
                         .header("X-Sharer-User-Id", 1L)

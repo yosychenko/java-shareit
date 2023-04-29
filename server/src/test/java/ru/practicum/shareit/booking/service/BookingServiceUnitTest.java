@@ -116,19 +116,6 @@ public class BookingServiceUnitTest {
     }
 
     @Test
-    void testCreateBookingInvalidBookingPeriod() {
-        CreateBookingDto createBookingDto = CreateBookingDto.builder()
-                .start(end)
-                .end(start)
-                .itemId(item.getId())
-                .build();
-
-        assertThatThrownBy(() -> bookingService.createBooking(booker.getId(), createBookingDto))
-                .isInstanceOf(BookingPeriodIsNotValidException.class)
-                .hasMessageContaining("У бронирования задан некорректный период бронирования.");
-    }
-
-    @Test
     void testCreateBookingItemIsNotAvailable() {
         CreateBookingDto createBookingDto = CreateBookingDto.builder()
                 .start(start)
@@ -275,7 +262,7 @@ public class BookingServiceUnitTest {
         rejectedBooking.setStart(LocalDateTime.now().minusDays(1));
         rejectedBooking.setEnd(LocalDateTime.now().plusDays(2));
         rejectedBooking.setStatus(BookingStatus.REJECTED);
-        when(bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(any(User.class), any(BookingState.class), any(Pageable.class)))
+        when(bookingStorage.findBookingsByBookerAndStatusOrderByStartDesc(any(User.class), any(BookingStatus.class), any(Pageable.class)))
                 .thenReturn(List.of(rejectedBooking));
         Collection<Booking> bookingsREJECTED = bookingService.getUserBookings(booker.getId(), bookingState, PageRequest.of(0, 2000));
         assertThat(bookingsREJECTED).isNotEmpty();
@@ -327,7 +314,7 @@ public class BookingServiceUnitTest {
         rejectedBooking.setStart(LocalDateTime.now().minusDays(1));
         rejectedBooking.setEnd(LocalDateTime.now().plusDays(2));
         rejectedBooking.setStatus(BookingStatus.REJECTED);
-        when(bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(anyCollection(), any(BookingState.class), any(Pageable.class)))
+        when(bookingStorage.findBookingsByItemInAndStatusOrderByStartDesc(anyCollection(), any(BookingStatus.class), any(Pageable.class)))
                 .thenReturn(List.of(rejectedBooking));
         Collection<Booking> bookingsREJECTED = bookingService.getOwnedItemsBookings(owner.getId(), bookingState, PageRequest.of(0, 2000));
         assertThat(bookingsREJECTED).isNotEmpty();

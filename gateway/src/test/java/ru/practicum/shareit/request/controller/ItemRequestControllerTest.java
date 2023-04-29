@@ -6,27 +6,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
 import ru.practicum.shareit.TestUtils;
 import ru.practicum.shareit.item.dto.ItemDtoSimpleWithStatus;
+import ru.practicum.shareit.request.client.ItemRequestClient;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestResponseDto;
-import ru.practicum.shareit.request.model.ItemRequest;
-import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.user.dto.UserDtoSimple;
-import ru.practicum.shareit.user.exception.UserNotFoundException;
-import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,14 +34,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 public class ItemRequestControllerTest {
     @Mock
-    private ItemRequestService itemRequestService;
+    private ItemRequestClient itemRequestClient;
 
     @InjectMocks
     private ItemRequestController itemRequestController;
 
     private MockMvc mvc;
-
-    private ItemRequest itemRequest;
 
     private ItemRequestDto itemRequestDto;
 
@@ -52,13 +49,10 @@ public class ItemRequestControllerTest {
 
     private UserDtoSimple userDtoSimple;
 
+    private ResponseEntity<Object> itemRequestResponse;
+
     @BeforeEach
     void beforeEach() {
-        User user = new User();
-        user.setId(1L);
-        user.setName("John");
-        user.setEmail("john.doe@mail.com");
-
         mvc = MockMvcBuilders
                 .standaloneSetup(itemRequestController)
                 .setControllerAdvice(ExceptionControllerAdvice.class)
@@ -68,12 +62,6 @@ public class ItemRequestControllerTest {
                 .id(1L)
                 .name("John")
                 .build();
-
-        itemRequest = new ItemRequest();
-        itemRequest.setId(1L);
-        itemRequest.setDescription("description");
-        itemRequest.setRequestor(user);
-        itemRequest.setCreated(LocalDateTime.of(2023, 4, 13, 10, 0));
 
         itemRequestDto = ItemRequestDto.builder()
                 .id(1L)
@@ -96,11 +84,16 @@ public class ItemRequestControllerTest {
                 .created(LocalDateTime.of(2023, 4, 13, 10, 0))
                 .items(List.of(itemDtoSimpleWithStatus))
                 .build();
+
+        itemRequestResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(itemRequestDto),
+                HttpStatus.OK
+        );
     }
 
     @Test
     void testCreateItemRequest() throws Exception {
-        when(itemRequestService.createItemRequest(anyLong(), any(ItemRequest.class))).thenReturn(itemRequest);
+        when(itemRequestClient.createItemRequest(anyLong(), any())).thenReturn(itemRequestResponse);
 
         mvc.perform(post("/requests")
                         .content(TestUtils.asJsonString(itemRequestDto))
@@ -127,12 +120,16 @@ public class ItemRequestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-
     }
 
     @Test
     void testCreateItemRequestUserNotFound() throws Exception {
-        when(itemRequestService.createItemRequest(anyLong(), any(ItemRequest.class))).thenThrow(new UserNotFoundException(1L));
+        itemRequestResponse = new ResponseEntity<>(
+                Map.of("message", "Пользователь c ID=1 не найден."),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(itemRequestClient.createItemRequest(anyLong(), any())).thenReturn(itemRequestResponse);
 
         mvc.perform(post("/requests")
                         .content(TestUtils.asJsonString(itemRequestDto))
@@ -147,7 +144,12 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetAllItemRequestsFromUser() throws Exception {
-        when(itemRequestService.getAllItemRequestsFromUser(anyLong())).thenReturn(List.of(itemRequestResponseDto));
+        itemRequestResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(itemRequestResponseDto)),
+                HttpStatus.OK
+        );
+
+        when(itemRequestClient.getAllItemRequestsFromUser(anyLong())).thenReturn(itemRequestResponse);
 
         mvc.perform(get("/requests")
                         .header("X-Sharer-User-Id", 1L)
@@ -171,7 +173,12 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestsForUserOwnedItems() throws Exception {
-        when(itemRequestService.getAllOtherUsersRequests(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
+        itemRequestResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(itemRequestResponseDto)),
+                HttpStatus.OK
+        );
+
+        when(itemRequestClient.getAllOtherUsersRequests(anyLong(), anyInt(), anyInt())).thenReturn(itemRequestResponse);
 
         mvc.perform(get("/requests/all?from=0&size=4")
                         .header("X-Sharer-User-Id", 1L)
@@ -195,7 +202,12 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestsForUserOwnedItemsWithoutParams() throws Exception {
-        when(itemRequestService.getAllOtherUsersRequests(anyLong(), any(Pageable.class))).thenReturn(List.of(itemRequestResponseDto));
+        itemRequestResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(itemRequestResponseDto)),
+                HttpStatus.OK
+        );
+
+        when(itemRequestClient.getAllOtherUsersRequests(anyLong(), anyInt(), anyInt())).thenReturn(itemRequestResponse);
 
         mvc.perform(get("/requests/all")
                         .header("X-Sharer-User-Id", 1L)
@@ -219,7 +231,6 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestsForUserOwnedItemsWrongParams() throws Exception {
-
         mvc.perform(get("/requests/all?from=-1&size=-999")
                         .header("X-Sharer-User-Id", 1L)
                         .accept(MediaType.APPLICATION_JSON))
@@ -230,7 +241,12 @@ public class ItemRequestControllerTest {
 
     @Test
     void testGetItemRequestById() throws Exception {
-        when(itemRequestService.getItemRequestByIdFullInfo(anyLong(), anyLong())).thenReturn(itemRequestResponseDto);
+        itemRequestResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(itemRequestResponseDto),
+                HttpStatus.OK
+        );
+
+        when(itemRequestClient.getItemRequestById(anyLong(), anyLong())).thenReturn(itemRequestResponse);
 
         mvc.perform(get("/requests/" + 1L)
                         .header("X-Sharer-User-Id", 1L)

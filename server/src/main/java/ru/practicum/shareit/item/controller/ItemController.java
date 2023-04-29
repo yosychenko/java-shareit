@@ -11,7 +11,6 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 
-import javax.validation.constraints.NotBlank;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -75,7 +74,7 @@ public class ItemController {
     @GetMapping("/search")
     Collection<ItemDto> searchItems(
             @RequestHeader("X-Sharer-User-Id") long userId,
-            @NotBlank @RequestParam String text,
+            @RequestParam String text,
             @RequestParam(defaultValue = "0") int from,
             @RequestParam(defaultValue = "2000") int size
     ) {

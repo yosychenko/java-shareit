@@ -6,10 +6,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
+import ru.practicum.shareit.ShareItGateway;
 import ru.practicum.shareit.TestUtils;
 import ru.practicum.shareit.booking.client.BookingClient;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -20,6 +24,7 @@ import ru.practicum.shareit.user.dto.UserDtoSimple;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ContextConfiguration(classes = ShareItGateway.class)
 @ExtendWith(MockitoExtension.class)
 public class BookingControllerTest {
     @Mock
@@ -42,6 +48,8 @@ public class BookingControllerTest {
 
     private BookingDto bookingDto;
 
+    private ResponseEntity<Object> bookingResponse;
+
     @BeforeEach
     void beforeEach() throws Exception {
         mvc = MockMvcBuilders
@@ -51,8 +59,8 @@ public class BookingControllerTest {
 
         createBookingDto = CreateBookingDto.builder()
                 .itemId(1L)
-                .start(LocalDateTime.of(2023, 4, 13, 10, 0))
-                .end(LocalDateTime.of(2023, 4, 20, 10, 0))
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
                 .build();
 
         ItemDtoSimple itemDtoSimple = ItemDtoSimple.builder()
@@ -66,34 +74,22 @@ public class BookingControllerTest {
 
         bookingDto = BookingDto.builder()
                 .id(1L)
-                .start(LocalDateTime.of(2023, 4, 13, 10, 0))
-                .end(LocalDateTime.of(2023, 4, 20, 10, 0))
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(1))
                 .item(itemDtoSimple)
                 .booker(userDtoSimple)
-                .status(BookingStatus.WAITING)
+                .status(BookingState.WAITING)
                 .build();
 
-        Item item = new Item();
-        item.setId(10L);
-        item.setName("item_name");
-
-        User user = new User();
-        user.setId(23L);
-        user.setName("user_name");
-
-        booking = new Booking();
-        booking.setId(1L);
-        booking.setStart(LocalDateTime.of(2023, 4, 13, 10, 0));
-        booking.setEnd(LocalDateTime.of(2023, 4, 20, 10, 0));
-        booking.setItem(item);
-        booking.setBooker(user);
-        booking.setStatus(BookingState.WAITING);
-
+        bookingResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(bookingDto),
+                HttpStatus.OK
+        );
     }
 
     @Test
     void testCreateBooking() throws Exception {
-        when(bookingClient.createBooking(anyLong(), any(CreateBookingDto.class))).thenReturn(booking);
+        when(bookingClient.createBooking(anyLong(), any(CreateBookingDto.class))).thenReturn(bookingResponse);
 
         mvc.perform(post("/bookings")
                         .content(TestUtils.asJsonString(createBookingDto))
@@ -121,7 +117,7 @@ public class BookingControllerTest {
 
     @Test
     void testApproveBooking() throws Exception {
-        when(bookingClient.approveBooking(anyLong(), anyLong(), anyBoolean())).thenReturn(booking);
+        when(bookingClient.approveBooking(anyLong(), anyLong(), anyBoolean())).thenReturn(bookingResponse);
 
         mvc.perform(patch("/bookings/1?approved=true")
                         .content(TestUtils.asJsonString(createBookingDto))
@@ -149,8 +145,7 @@ public class BookingControllerTest {
 
     @Test
     void testGetBookingById() throws Exception {
-        when(bookingClient.getBookingById(anyLong(), anyLong())).thenReturn(booking);
-
+        when(bookingClient.getBookingById(anyLong(), anyLong())).thenReturn(bookingResponse);
 
         mvc.perform(get("/bookings/1")
                         .header("X-Sharer-User-Id", 1L)
@@ -176,7 +171,12 @@ public class BookingControllerTest {
 
     @Test
     void testGetBookingByIdNonExistentId() throws Exception {
-        when(bookingClient.getBookingById(anyLong(), anyLong())).thenThrow(new BookingNotFoundException(1L));
+        bookingResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(Map.of("message", "Бронирование c ID=1 не найдено.")),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(bookingClient.getBookingById(anyLong(), anyLong())).thenReturn(bookingResponse);
 
         mvc.perform(get("/bookings/1")
                         .header("X-Sharer-User-Id", 1L)
@@ -188,7 +188,13 @@ public class BookingControllerTest {
 
     @Test
     void testGetUserBookings() throws Exception {
-        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
+        bookingResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(bookingDto)),
+                HttpStatus.OK
+        );
+
+
+        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), anyInt(), anyInt())).thenReturn(bookingResponse);
 
         mvc.perform(get("/bookings")
                         .header("X-Sharer-User-Id", 1L)
@@ -216,7 +222,12 @@ public class BookingControllerTest {
 
     @Test
     void testGetUserBookingsNonExistentUser() throws Exception {
-        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenThrow(new UserNotFoundException(1L));
+        bookingResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(Map.of("message", "Пользователь c ID=1 не найден.")),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(bookingClient.getUserBookings(anyLong(), any(BookingState.class), anyInt(), anyInt())).thenReturn(bookingResponse);
 
         mvc.perform(get("/bookings")
                         .header("X-Sharer-User-Id", 1L)
@@ -228,8 +239,12 @@ public class BookingControllerTest {
 
     @Test
     void testGetOwnedItemsBookings() throws Exception {
-        when(bookingClient.getOwnedItemsBookings(anyLong(), any(BookingState.class), any(Pageable.class))).thenReturn(List.of(booking));
+        bookingResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(bookingDto)),
+                HttpStatus.OK
+        );
 
+        when(bookingClient.getOwnedItemsBookings(anyLong(), any(BookingState.class), anyInt(), anyInt())).thenReturn(bookingResponse);
 
         mvc.perform(get("/bookings/owner")
                         .header("X-Sharer-User-Id", 1L)

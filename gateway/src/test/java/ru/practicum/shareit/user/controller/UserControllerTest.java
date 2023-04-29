@@ -6,22 +6,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.practicum.shareit.ExceptionControllerAdvice;
 import ru.practicum.shareit.TestUtils;
 import ru.practicum.shareit.user.client.UserClient;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.exceptiona.UserNotFoundException;
-import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,9 +37,9 @@ public class UserControllerTest {
 
     private MockMvc mvc;
 
-    private User user;
-
     private UserDto userDto;
+
+    private ResponseEntity<Object> userResponse;
 
     @BeforeEach
     void beforeEach() {
@@ -48,22 +48,22 @@ public class UserControllerTest {
                 .setControllerAdvice(ExceptionControllerAdvice.class)
                 .build();
 
-        user = new User();
-        user.setId(1L);
-        user.setName("John");
-        user.setEmail("john.doe@mail.com");
-
         userDto = UserDto.builder()
                 .id(1L)
                 .name("John")
                 .email("john.doe@mail.com")
                 .build();
+
+        userResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(userDto),
+                HttpStatus.OK
+        );
     }
 
 
     @Test
     void testCreateUser() throws Exception {
-        when(userService.createUser(any(User.class))).thenReturn(user);
+        when(userClient.createUser(any(UserDto.class))).thenReturn(userResponse);
 
         mvc.perform(post("/users")
                         .content(TestUtils.asJsonString(userDto))
@@ -78,10 +78,14 @@ public class UserControllerTest {
 
     @Test
     void testCreateUserEmptyEmailValidationError() throws Exception {
-        userDto = UserDto.builder()
-                .id(1L)
-                .name("John")
-                .build();
+        userDto.setName("updateName");
+
+        userResponse = new ResponseEntity<>(
+                Map.of("email", "Электронная почта не может быть пустой."),
+                HttpStatus.BAD_REQUEST
+        );
+
+        when(userClient.createUser(any(UserDto.class))).thenReturn(userResponse);
 
         mvc.perform(post("/users")
                         .content(TestUtils.asJsonString(userDto))
@@ -94,7 +98,14 @@ public class UserControllerTest {
 
     @Test
     void testUpdateUser() throws Exception {
-        when(userService.updateUser(anyLong(), any(User.class))).thenReturn(user);
+        userDto.setName("updateName");
+
+        userResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(userDto),
+                HttpStatus.OK
+        );
+
+        when(userClient.updateUser(anyLong(), any(UserDto.class))).thenReturn(userResponse);
 
         mvc.perform(patch("/users/" + 1L)
                         .content(TestUtils.asJsonString(userDto))
@@ -110,7 +121,12 @@ public class UserControllerTest {
 
     @Test
     void testUpdateUserUserDoesntExist() throws Exception {
-        when(userService.updateUser(anyLong(), any(User.class))).thenThrow(new UserNotFoundException(1L));
+        userResponse = new ResponseEntity<>(
+                Map.of("message", "Пользователь c ID=1 не найден."),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(userClient.updateUser(anyLong(), any(UserDto.class))).thenReturn(userResponse);
 
         mvc.perform(patch("/users/" + 1L)
                         .content(TestUtils.asJsonString(userDto))
@@ -123,7 +139,12 @@ public class UserControllerTest {
 
     @Test
     void testDeleteUser() throws Exception {
-        doNothing().when(userService).deleteUser(anyLong());
+        userResponse = new ResponseEntity<>(
+                null,
+                HttpStatus.OK
+        );
+
+        when(userClient.deleteUser(anyLong())).thenReturn(userResponse);
 
         mvc.perform(delete("/users/" + 1L)
                         .content(TestUtils.asJsonString(userDto))
@@ -134,7 +155,12 @@ public class UserControllerTest {
 
     @Test
     void testDeleteUserUserDoesntExist() throws Exception {
-        doThrow(new UserNotFoundException(1L)).when(userService).deleteUser(anyLong());
+        userResponse = new ResponseEntity<>(
+                Map.of("message", "Пользователь c ID=1 не найден."),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(userClient.deleteUser(anyLong())).thenReturn(userResponse);
 
         mvc.perform(delete("/users/" + 1L)
                         .content(TestUtils.asJsonString(userDto))
@@ -147,8 +173,7 @@ public class UserControllerTest {
 
     @Test
     void testGetUserById() throws Exception {
-        when(userService.getUserById(anyLong())).thenReturn(user);
-
+        when(userClient.getUserById(anyLong())).thenReturn(userResponse);
 
         mvc.perform(get("/users/" + 1L)
                         .accept(MediaType.APPLICATION_JSON))
@@ -161,7 +186,12 @@ public class UserControllerTest {
 
     @Test
     void testGetUserByIdUserNotFound() throws Exception {
-        when(userService.getUserById(anyLong())).thenThrow(new UserNotFoundException(1L));
+        userResponse = new ResponseEntity<>(
+                Map.of("message", "Пользователь c ID=1 не найден."),
+                HttpStatus.NOT_FOUND
+        );
+
+        when(userClient.getUserById(anyLong())).thenReturn(userResponse);
 
         mvc.perform(get("/users/" + 1L)
                         .accept(MediaType.APPLICATION_JSON))
@@ -172,7 +202,12 @@ public class UserControllerTest {
 
     @Test
     void testGetAllUsers() throws Exception {
-        when(userService.getAllUsers()).thenReturn(List.of(user));
+        userResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of(userDto)),
+                HttpStatus.OK
+        );
+
+        when(userClient.getAllUsers()).thenReturn(userResponse);
 
         mvc.perform(get("/users")
                         .accept(MediaType.APPLICATION_JSON))
@@ -185,7 +220,12 @@ public class UserControllerTest {
 
     @Test
     void testGetAllUsersNoUsers() throws Exception {
-        when(userService.getAllUsers()).thenReturn(List.of());
+        userResponse = new ResponseEntity<>(
+                TestUtils.asJsonString(List.of()),
+                HttpStatus.OK
+        );
+
+        when(userClient.getAllUsers()).thenReturn(userResponse);
 
         mvc.perform(get("/users")
                         .accept(MediaType.APPLICATION_JSON))
