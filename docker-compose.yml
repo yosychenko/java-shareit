@@ -9,6 +9,9 @@ services:
       - server
     environment:
       - SHAREIT_SERVER_URL=http://server:9090
+      - JAVA_OPTS=-Xmx6g
+    volumes:
+      - ./logs:/gateway-logs
 
   server:
     build: ./server
@@ -22,6 +25,9 @@ services:
       - POSTGRES_DB=shareit
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
+      - JAVA_OPTS=-Xmx6g
+    volumes:
+      - ./logs:/server-logs
 
   db:
     image: postgres:14-alpine
